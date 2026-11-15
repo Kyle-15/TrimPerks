@@ -63,8 +63,9 @@ public final class Perks {
 	static {
 		add(Kind.GENERAL, "general", "Effects marked [PvP] work at {pvp_multiplier%} strength when they hit or protect against a player. "
 			+ "A new or changed trim is inactive for {settle_seconds}s. A material-only retrim costs {material_swap_levels} levels "
-			+ "every time (it never grows). Protection and trims together never block more than {max_damage_reduction%} of damage.",
-			"pvp_multiplier", 0.75, "settle_seconds", 60, "material_swap_levels", 3, "max_damage_reduction", 0.64);
+			+ "every time (it never grows). Protection and trims together never block more than {max_damage_reduction%} of damage. "
+			+ "Cooldown bars at the top of the screen: {cooldown_bars} (1 = on, 0 = off for everyone).",
+			"pvp_multiplier", 0.75, "settle_seconds", 60, "material_swap_levels", 3, "max_damage_reduction", 0.64, "cooldown_bars", 1);
 
 		material("iron", "The baseline: no upside, no downside.", 1, 1, 1, 1);
 		material("copper", "Lasts x{duration} as long, but strength x{strength}.", 0.75, 1.5, 1, 1);
@@ -101,7 +102,7 @@ public final class Perks {
 		add(Kind.WEAPON, "dune", "Hits slow targets for {duration}s.", "duration", 1);
 		add(Kind.WEAPON, "coast", "+{damage%} damage to aquatic mobs. Doesn't work with Impaling.", "damage", 0.2);
 		add(Kind.WEAPON, "wild", "Crits poison the target for {duration}s.", "duration", 2);
-		add(Kind.WEAPON, "ward", "Kills give 2 hearts of Absorption for {duration}s. {cooldown}s cooldown.", "duration", 10, "cooldown", 30);
+		add(Kind.WEAPON, "ward", "Killing a hostile mob or player gives 2 hearts of Absorption for {duration}s. {cooldown}s cooldown.", "duration", 10, "cooldown", 30);
 		add(Kind.WEAPON, "eye", "Crits make the target glow for {duration}s.", "duration", 3);
 		add(Kind.WEAPON, "vex", "+{speed%} attack speed.", "speed", 0.1);
 		add(Kind.WEAPON, "tide", "+{knockback%} knockback in water.", "knockback", 0.5);
@@ -131,7 +132,7 @@ public final class Perks {
 		add(Kind.TOOL, "shaper", "+{reach} block mining reach.", "reach", 1);
 		add(Kind.TOOL, "silence", "Mining makes no sculk vibrations.");
 		add(Kind.TOOL, "raiser", "Hoe: right-click to bonemeal one crop. {cooldown}s cooldown.", "cooldown", 30);
-		add(Kind.TOOL, "host", "Your kills heal nearby pets {hearts} hearts.", "hearts", 2);
+		add(Kind.TOOL, "host", "Killing a hostile mob or player heals your nearby pets {hearts} hearts.", "hearts", 2);
 		add(Kind.TOOL, "flow", "Chain-mining gets {per_block%} faster per block, up to {max%}.", "per_block", 0.05, "max", 0.25);
 		add(Kind.TOOL, "bolt", "Axe: fells a whole natural tree (not builds), up to {max_logs} logs (1 durability each). Sneak to break just one log.", "max_logs", 64);
 	}

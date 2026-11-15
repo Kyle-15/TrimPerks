@@ -45,6 +45,8 @@ public final class Guide {
 		body.add(message(text("Change a trim's material: smithing table with the item and a new material, template slot empty. "
 			+ "Remove a trim: grindstone with flint in the second slot (you lose the template). "
 			+ "Enchantments are never touched, and a trim never stacks with an enchantment that does the same thing.", "white", false)));
+		body.add(message(text("Cooldowns show as a bar at the top of your screen (blue = armor, red = weapon, yellow = tool). "
+			+ "It turns green with a ding when the effect is ready. /trimperks bars off hides them, /trimperks bars on brings them back.", "white", false)));
 		return body;
 	}
 
@@ -120,6 +122,7 @@ public final class Guide {
 			{"/trimperks config enable <name>", "Turns it back on."},
 			{"/trimperks config reload", "Re-reads the file after editing it by hand. Plain /reload does this too."},
 			{"/trimperks guide", "The player guide (anyone can open it)."},
+			{"/trimperks bars on|off", "Shows or hides your own cooldown bars (anyone). general.cooldown_bars 0 turns them off for everyone."},
 		};
 		JsonArray body = new JsonArray();
 		for (String[] r : rows) {

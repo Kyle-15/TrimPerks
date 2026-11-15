@@ -16,6 +16,7 @@ public class TrimPerks implements ModInitializer {
 	public void onInitialize() {
 		config = TrimPerksConfig.load();
 		Effects.register();
+		Cooldowns.init();
 		CommandRegistrationCallback.EVENT.register((dispatcher, registries, environment) -> TrimPerksCommands.register(dispatcher));
 		// /reload re-reads config/trimperks.json too
 		ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resources, success) -> {

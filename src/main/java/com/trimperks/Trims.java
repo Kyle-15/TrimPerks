@@ -170,6 +170,7 @@ public final class Trims {
 		public final Map<String, Long> timers = new HashMap<>();
 		public int counter, hits;
 		public boolean wasJumping, wasSneaking;
+		final Map<String, Cooldowns.Bar> bars = new java.util.LinkedHashMap<>();
 	}
 
 	private static final Map<UUID, State> STATES = new HashMap<>();
@@ -213,8 +214,11 @@ public final class Trims {
 			if (player.totalExperience < xp) return false;
 			player.giveExperiencePoints(-xp);
 		}
-		if (player.getRandom().nextDouble() >= a.skipChance())
-			state(player).readyAt.put(a.kind() + cooldownName, now(player.level()) + a.cooldownTicks(cooldownName));
+		if (player.getRandom().nextDouble() >= a.skipChance()) {
+			long ticks = a.cooldownTicks(cooldownName);
+			state(player).readyAt.put(a.kind() + cooldownName, now(player.level()) + ticks);
+			Cooldowns.start(player, a, ticks);
+		}
 		if (a.chime()) {
 			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1.5f, 1f);
 			player.gameEvent(GameEvent.RESONATE_15);

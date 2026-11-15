@@ -30,6 +30,7 @@ Everything under `/trimperks config` needs op (permission level 2).
 | Command | What it does |
 |---|---|
 | `/trimperks guide` | Player guide window: every effect with its current numbers. Anyone can use it. |
+| `/trimperks bars on` / `off` | Shows or hides your own cooldown bars. Anyone can use it; it's remembered across restarts. |
 | `/trimperks config` | Op settings window: every setting grouped by page; click one to put its `set` command in chat. Changed values show in yellow. |
 | `/trimperks config set <key> <value>` | Changes one number right away and saves the file. Tab lists every key. |
 | `/trimperks config get <key>` | Shows the current value and the default. |
@@ -66,6 +67,7 @@ Units:
 | `general.settle_seconds` | 60 | How long a new or changed trim stays inactive. Stops mid-fight swapping. |
 | `general.material_swap_levels` | 3 | XP levels for a material-only retrim. Flat: it never grows with repeats. |
 | `general.max_damage_reduction` | 0.64 | Protection + Ward's Resistance can never block more than this (0.64 = Protection IV). |
+| `general.cooldown_bars` | 1 | Cooldown bars at the top of the screen. 0 turns them off for everyone. |
 
 PvP-flagged patterns: Ward, Vex, Rib, Shaper, Silence, Flow, Bolt.
 
@@ -89,6 +91,9 @@ Change one thing at a time and give players a few days before changing it again.
 - **Enchantments:** never removed by trimming. A trim that overlaps an enchantment (Feather Falling, Depth Strider,
   Respiration, Fire Protection, Fire Aspect, Impaling) turns itself off while that enchantment is present.
 - **Mixed materials on armor:** each piece gives 25% of its material's modifiers.
+- **Cooldown bars:** when an effect with a cooldown fires, a boss bar fills up at the top of the screen (blue = armor,
+  red = weapon, yellow = tool), then turns green with a ding when it's ready. Vanilla boss bars, so no mod needed.
+- **Kill effects** (Ward weapon, Host tool) only count hostile mobs and players, not farm animals.
 - **Resin:** keeps an effect working for a few seconds after the item is removed or swapped away.
 
 ## Working with other mods and packs

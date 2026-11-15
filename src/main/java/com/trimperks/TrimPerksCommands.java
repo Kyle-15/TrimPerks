@@ -39,6 +39,15 @@ public final class TrimPerksCommands {
 				Guide.open(ctx.getSource().getPlayerOrException());
 				return 1;
 			}))
+			.then(literal("bars")
+				.then(literal("on").executes(ctx -> {
+					Cooldowns.setHidden(ctx.getSource().getPlayerOrException(), false);
+					return ok(ctx, "Cooldown bars on");
+				}))
+				.then(literal("off").executes(ctx -> {
+					Cooldowns.setHidden(ctx.getSource().getPlayerOrException(), true);
+					return ok(ctx, "Cooldown bars off");
+				})))
 			.then(literal("config").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 				.executes(ctx -> {
 					Guide.openOp(ctx.getSource().getPlayerOrException());

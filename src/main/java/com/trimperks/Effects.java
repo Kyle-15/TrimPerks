@@ -107,6 +107,7 @@ public final class Effects {
 
 	private static void tickPlayer(ServerPlayer p) {
 		Trims.syncModel(p.getMainHandItem()); // covers tools trimmed by commands or before the pack existed
+		Cooldowns.tick(p, Trims.now(p.level()));
 		Active armor = Trims.get(p, Kind.ARMOR), weapon = Trims.get(p, Kind.WEAPON), tool = Trims.get(p, Kind.TOOL);
 		Trims.State st = Trims.state(p);
 		long now = Trims.now(p.level());
@@ -341,9 +342,11 @@ public final class Effects {
 	private static void afterKill(Entity killer, LivingEntity killed) {
 		if (!(killer instanceof ServerPlayer p) || !(p.level() instanceof ServerLevel level)) return;
 		Active w = Trims.get(p, Kind.WEAPON), t = Trims.get(p, Kind.TOOL);
-		if (w != null && w.pattern().equals("ward") && Trims.trigger(p, w, "cooldown")) Trims.buff(p, w, MobEffects.ABSORPTION, w.ticks("duration"), 0);
+		// Ward and Host only reward real fights: hostile mobs and players, not farm animals
+		boolean fight = killed instanceof net.minecraft.world.entity.monster.Enemy || killed instanceof Player;
+		if (fight && w != null && w.pattern().equals("ward") && Trims.trigger(p, w, "cooldown")) Trims.buff(p, w, MobEffects.ABSORPTION, w.ticks("duration"), 0);
 		if (w != null && w.pattern().equals("wayfinder")) MAGNETS.add(new Magnet(level, killed.position(), p));
-		if (t != null && t.pattern().equals("host")) for (TamableAnimal pet : pets(p, 16)) pet.heal((float) (t.raw("hearts") * 2 * t.strength()));
+		if (fight && t != null && t.pattern().equals("host")) for (TamableAnimal pet : pets(p, 16)) pet.heal((float) (t.raw("hearts") * 2 * t.strength()));
 	}
 
 	// ---------------------------------------------------------------- blocks and items
