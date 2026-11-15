@@ -84,18 +84,18 @@ public final class Perks {
 		add(Kind.ARMOR, "coast", "Swim {swim%} faster. Doesn't work with Depth Strider boots.", "swim", 0.3);
 		add(Kind.ARMOR, "wild", "Cactus and berry bushes don't hurt you; leaves don't slow you.");
 		add(Kind.ARMOR, "ward", "Below {hearts} hearts you get Resistance for {duration}s. {cooldown}s cooldown.", "hearts", 4, "duration", 3, "cooldown", 90);
-		add(Kind.ARMOR, "eye", "Endermen don't aggro. Sneak to make mobs within {range} blocks glow for {duration}s. {cooldown}s cooldown.", "range", 16, "duration", 3, "cooldown", 60);
+		add(Kind.ARMOR, "eye", "Endermen don't aggro. Double-tap sneak to make mobs within {range} blocks glow for {duration}s. {cooldown}s cooldown.", "range", 16, "duration", 3, "cooldown", 60);
 		add(Kind.ARMOR, "vex", "{chance%} chance to dodge a melee hit. {cooldown}s cooldown.", "chance", 0.1, "cooldown", 20);
 		add(Kind.ARMOR, "tide", "{air%} more air underwater. Doesn't work with a Respiration helmet.", "air", 0.5);
 		add(Kind.ARMOR, "snout", "Piglins stay neutral even without gold.");
 		add(Kind.ARMOR, "rib", "Fire and Wither last {reduction%} shorter on you. Doesn't work with Fire Protection.", "reduction", 0.5);
-		add(Kind.ARMOR, "spire", "Your first fall every {cooldown}s takes no damage, up to {max_height} blocks. Doesn't work with Feather Falling boots.", "cooldown", 30, "max_height", 10);
+		add(Kind.ARMOR, "spire", "Your first real fall every {cooldown}s (one that would hurt at least a heart) takes no damage, up to {max_height} blocks. Doesn't work with Feather Falling boots.", "cooldown", 30, "max_height", 10);
 		add(Kind.ARMOR, "wayfinder", "While sneaking, the action bar shows the distance and direction to your last death.");
 		add(Kind.ARMOR, "shaper", "+{reach} block placing reach.", "reach", 1);
 		add(Kind.ARMOR, "silence", "Sculk sensors and Wardens can't hear your footsteps.");
 		add(Kind.ARMOR, "raiser", "Jump Boost {level} while sprinting.", "level", 1);
 		add(Kind.ARMOR, "host", "Your tamed pets within {range} blocks slowly regenerate.", "range", 16);
-		add(Kind.ARMOR, "flow", "Press jump in midair to dash. {cooldown}s cooldown.", "cooldown", 10);
+		add(Kind.ARMOR, "flow", "Double jump: jump, let go, then press jump again in midair to dash. {cooldown}s cooldown. Not while wearing an elytra.", "cooldown", 10);
 		add(Kind.ARMOR, "bolt", "Knocks melee attackers back. {cooldown}s cooldown.", "cooldown", 15);
 
 		add(Kind.WEAPON, "sentry", "+{damage%} damage to illagers.", "damage", 0.2);

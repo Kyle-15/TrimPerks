@@ -94,6 +94,9 @@ Change one thing at a time and give players a few days before changing it again.
 - **Cooldown bars:** when an effect with a cooldown fires, a boss bar fills up at the top of the screen (blue = armor,
   red = weapon, yellow = tool), then turns green with a ding when it's ready. Vanilla boss bars, so no mod needed.
 - **Kill effects** (Ward weapon, Host tool) only count hostile mobs and players, not farm animals.
+- **Effects you trigger yourself** need a clear signal: Flow is a real double jump (let go of jump in the air,
+  then press again) and never fires with an elytra or in creative; Eye needs a double-tap of sneak; Spire only uses
+  its save on falls that would hurt at least a heart.
 - **Resin:** keeps an effect working for a few seconds after the item is removed or swapped away.
 
 ## Working with other mods and packs

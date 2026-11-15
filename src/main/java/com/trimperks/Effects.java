@@ -125,13 +125,26 @@ public final class Effects {
 		mod(p, Attributes.MOVEMENT_SPEED, "speed", speed, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 
 		// Armor: timed and input effects
-		boolean sneaking = p.isShiftKeyDown(), jumping = p.getLastClientInput().jump();
-		if (a.equals("eye") && sneaking && !st.wasSneaking && Trims.trigger(p, armor, "cooldown")) {
-			for (Mob mob : p.level().getEntitiesOfClass(Mob.class, p.getBoundingBox().inflate(armor.reach("range"))))
-				mob.addEffect(new MobEffectInstance(MobEffects.GLOWING, armor.ticks("duration"), 0, false, false));
+		boolean sneaking = p.getLastClientInput().shift(), jumping = p.getLastClientInput().jump();
+		// Eye: a double-tap of sneak (two presses within 8 ticks), so normal crouching never sets it off
+		if (sneaking && !st.wasSneaking) {
+			if (a.equals("eye") && now - st.lastSneakPress <= 8 && Trims.trigger(p, armor, "cooldown")) {
+				for (Mob mob : p.level().getEntitiesOfClass(Mob.class, p.getBoundingBox().inflate(armor.reach("range"))))
+					mob.addEffect(new MobEffectInstance(MobEffects.GLOWING, armor.ticks("duration"), 0, false, false));
+				st.lastSneakPress = Long.MIN_VALUE / 2;
+			} else {
+				st.lastSneakPress = now;
+			}
 		}
-		if (a.equals("flow") && jumping && !st.wasJumping && !p.onGround() && !p.isFallFlying() && !p.isInWater() && !p.isInLava()
-				&& !p.onClimbable() && !p.isPassenger() && !p.getAbilities().flying && Trims.trigger(p, armor, "cooldown")) {
+		// Flow: a real double jump. The jump that leaves the ground arrives while you're already airborne, so a press
+		// only counts after jump was let go in the air. Never with an elytra (that press opens it) or where you can
+		// fly (creative double-tap).
+		if (p.onGround() || p.isInWater() || p.onClimbable() || p.isPassenger()) st.flowArmed = false;
+		else if (!jumping) st.flowArmed = true;
+		if (a.equals("flow") && jumping && !st.wasJumping && st.flowArmed && !p.isFallFlying() && !p.isInLava()
+				&& !p.getAbilities().mayfly && !p.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).has(net.minecraft.core.component.DataComponents.GLIDER)
+				&& Trims.trigger(p, armor, "cooldown")) {
+			st.flowArmed = false;
 			Vec3 look = p.getLookAngle().multiply(1, 0, 1).normalize().scale(0.9 * armor.strength());
 			p.setDeltaMovement(p.getDeltaMovement().add(look.x, 0.35, look.z));
 			launch(p);
@@ -229,7 +242,7 @@ public final class Effects {
 			}
 			case "wild" -> { if (source.is(DamageTypes.CACTUS) || source.is(DamageTypes.SWEET_BERRY_BUSH)) return false; }
 			case "spire" -> {
-				if (source.is(DamageTypeTags.IS_FALL) && !Trims.armorHasEnchant(p, Enchantments.FEATHER_FALLING)
+				if (source.is(DamageTypeTags.IS_FALL) && amount >= 2 && !Trims.armorHasEnchant(p, Enchantments.FEATHER_FALLING)
 						&& Math.max(p.fallDistance, amount + 3) <= armor.power("max_height", null) && Trims.trigger(p, armor, "cooldown")) return false;
 			}
 			case "dune" -> {

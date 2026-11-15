@@ -169,7 +169,8 @@ public final class Trims {
 		final Map<Perks.Kind, Long> lastUntil = new HashMap<>();
 		public final Map<String, Long> timers = new HashMap<>();
 		public int counter, hits;
-		public boolean wasJumping, wasSneaking;
+		public boolean wasJumping, wasSneaking, flowArmed;
+		public long lastSneakPress = Long.MIN_VALUE / 2;
 		final Map<String, Cooldowns.Bar> bars = new java.util.LinkedHashMap<>();
 	}
 
