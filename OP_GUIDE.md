@@ -13,13 +13,13 @@ shovels, hoes (every tier), maces, bows, crossbows and fishing rods, tinted in t
 Tridents get the effects but no overlay (in hand they're 3D models).
 
 - **Players with the mod installed** see them automatically.
-- **Players without the mod** need the resource pack. For 0.2.0, put this in `server.properties`:
-  ```
-  resource-pack=https://github.com/Kyle-15/TrimPerks/releases/download/v0.2.0/TrimPerks-Resources.zip
-  resource-pack-sha1=6184cdfed475a4a6f5eb7c19cdf023f892e404c9
-  require-resource-pack=false
-  ```
-  For a newer release, use that release's `TrimPerks-Resources.zip` link and its sha1 (`shasum -a 1 TrimPerks-Resources.zip`).
+- **Players without the mod** are offered the resource pack automatically when they join (from 0.2.1). The mod sends
+  the exact pack released with that jar, so updating the jar updates the pack too, and there's nothing to put in
+  `server.properties`. It's optional for players, and it works next to your own server resource pack.
+  - If you added TrimPerks' `resource-pack=` lines to `server.properties` for an older version, **remove them**, or
+    players get the pack twice.
+  - To turn the offer off (for example if you bundle the textures into your own server pack):
+    `/trimperks config set general.offer_pack 0`.
 - Without either, trimmed tools look normal. The effects still work, and the trim still shows in the tooltip.
 - To change the art, edit `tools/gen_tool_trims.py` and run it with the path to the 26.3 `minecraft-client.jar`.
   Then run `./gradlew checkAssets` (checks every model with the game's own parser) and `./gradlew build`.
@@ -67,6 +67,7 @@ Units:
 | `general.settle_seconds` | 60 | How long a new or changed trim stays inactive. Stops mid-fight swapping. |
 | `general.material_swap_levels` | 3 | XP levels for a material-only retrim. Flat: it never grows with repeats. |
 | `general.cooldown_bars` | 1 | Cooldown bars at the top of the screen. 0 turns them off for everyone. |
+| `general.offer_pack` | 1 | Offer players the tool-trim resource pack when they join. 0 turns it off. |
 
 PvP-flagged patterns: Ward, Vex, Rib, Shaper, Silence, Flow, Bolt, Spire, Dune. Their numbers are scaled when they hit or
 protect against a player; their stat boosts (Shaper reach, Vex/Flow attack speed, Flow's dash) are scaled while another

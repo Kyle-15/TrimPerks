@@ -13,8 +13,7 @@ single best trim, and everything is tunable in-game.
 
 ## Install
 1. Put the TrimPerks jar and [Fabric API](https://modrinth.com/mod/fabric-api) in your server's `mods` folder.
-2. Optional: tool trim textures for players without the mod. Use `TrimPerks-Resources.zip` from the
-   [latest release](https://github.com/Kyle-15/TrimPerks/releases/latest) as the server resource pack (see the op guide).
+2. That's it: players without the mod are offered the tool-trim resource pack automatically when they join.
 
 ## Docs
 - [OP_GUIDE.md](OP_GUIDE.md): commands, every setting, balancing tips, resource pack setup

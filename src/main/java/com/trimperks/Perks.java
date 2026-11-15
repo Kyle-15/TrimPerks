@@ -94,8 +94,9 @@ public final class Perks {
 			+ "and their stat boosts (reach, attack speed, dash) drop to that while another player is within 8 blocks. "
 			+ "A new or changed trim is inactive for {settle_seconds}s. A material-only retrim costs {material_swap_levels} levels "
 			+ "every time (it never grows). "
-			+ "Cooldown bars at the top of the screen: {cooldown_bars} (1 = on, 0 = off for everyone).",
-			"pvp_multiplier", 0.75, "settle_seconds", 60, "material_swap_levels", 3, "cooldown_bars", 1);
+			+ "Cooldown bars at the top of the screen: {cooldown_bars} (1 = on, 0 = off for everyone). "
+			+ "Offer players the tool-trim resource pack when they join: {offer_pack} (1 = on, 0 = off).",
+			"pvp_multiplier", 0.75, "settle_seconds", 60, "material_swap_levels", 3, "cooldown_bars", 1, "offer_pack", 1);
 
 		material("iron", "The baseline: no upside, no downside.", 1, 1, 1, 1);
 		material("copper", "Lasts x{duration} as long, but strength x{strength}.", 0.75, 1.5, 1, 1);

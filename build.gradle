@@ -32,3 +32,32 @@ tasks.register("checkAssets", JavaExec) {
 	mainClass = "com.trimperks.CheckAssets"
 	args file("src/main/resources/assets/minecraft/items").absolutePath
 }
+
+// The resource pack for players without the mod: the tool-trim assets + src/pack/pack.mcmeta. Built reproducibly
+// (fixed timestamps and order), so the same assets always give the same zip and sha1. The sha1 and this version go
+// into the jar (trimperks-pack.properties), so the mod can offer players exactly the pack released with it.
+def resourcePack = tasks.register("resourcePack", Zip) {
+	archiveFileName = "TrimPerks-Resources.zip"
+	destinationDirectory = layout.buildDirectory
+	preserveFileTimestamps = false
+	reproducibleFileOrder = true
+	from("src/pack")
+	from("src/main/resources") { include "assets/**" }
+}
+def packInfoDir = layout.buildDirectory.dir("generated/packinfo")
+def packInfo = tasks.register("packInfo") {
+	dependsOn resourcePack
+	def zip = resourcePack.flatMap { it.archiveFile }
+	def version = project.version.toString().split("\\+")[0]
+	inputs.file zip
+	inputs.property "version", version
+	outputs.dir packInfoDir
+	doLast {
+		def sha = java.security.MessageDigest.getInstance("SHA-1").digest(zip.get().asFile.bytes).encodeHex().toString()
+		def out = packInfoDir.get().file("trimperks-pack.properties").asFile
+		out.parentFile.mkdirs()
+		out.text = "version=${version}\nsha1=${sha}\n"
+	}
+}
+sourceSets.main.resources.srcDir(packInfo)
+tasks.named("build") { dependsOn resourcePack }

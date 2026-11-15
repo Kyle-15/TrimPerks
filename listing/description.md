@@ -20,8 +20,8 @@ no single best trim, and server owners can tune every number in-game.
 
 ## Server-side
 Players **don't need the mod**: the windows, cooldown bars and effects all run on the server.
-For the tool and weapon trim textures, players without the mod can use the included **resource pack**, which you
-can set as the server resource pack. Players with the mod installed see the textures automatically.
+The tool and weapon trim textures are offered to players **automatically when they join**, as an optional
+resource pack, so there's nothing to set up. Players with the mod installed see them anyway.
 
 ## For server owners
 - `/trimperks config` opens a settings window for ops (click any setting to edit it).

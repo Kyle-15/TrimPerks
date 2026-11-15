@@ -7,7 +7,6 @@ Generates the tool/weapon trim overlays, item models and the TrimPerks resource 
 The client jar is only read for tool shapes (which pixels are the head, which are the handle) and the vanilla item
 definitions that the overlays wrap. No vanilla textures are copied into the output. Writes:
   src/main/resources/assets/...      (modded clients get the textures straight from the mod)
-  build/TrimPerks-Resources.zip      (for players without the mod; set it as the server resource pack)
   build/tool-trim-preview.png        (every pattern on every tool, for checking)
 No libraries needed: PNGs are read and written by hand.
 """
@@ -231,11 +230,8 @@ def main():
         open(full, "wb").write(data)
 
     os.makedirs(os.path.join(ROOT, "build"), exist_ok=True)
-    mcmeta = {"pack": {"description": "TrimPerks: trims on tools and weapons", "min_format": [97, 0], "max_format": [97, 1]}}
-    with zipfile.ZipFile(os.path.join(ROOT, "build/TrimPerks-Resources.zip"), "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr("pack.mcmeta", json.dumps(mcmeta, indent=2))
-        for path, data in sorted(files.items()):
-            z.writestr(path, data)
+    # The resource pack zip itself is built by Gradle (./gradlew resourcePack, part of build) from these assets and
+    # src/pack/pack.mcmeta, byte-for-byte the same every time, so the sha1 baked into the jar matches the released zip.
 
     # preview sheet: 18 patterns across, one tool class per row, 6x scale, dark background
     s, pad = 6, 2
