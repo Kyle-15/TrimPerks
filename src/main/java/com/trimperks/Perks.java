@@ -68,7 +68,7 @@ public final class Perks {
 
 		material("iron", "The baseline: no upside, no downside.", 1, 1, 1, 1);
 		material("copper", "Lasts x{duration} as long, but strength x{strength}.", 0.75, 1.5, 1, 1);
-		material("gold", "When a trim gives you a status effect, allies within {ally_range} blocks get it too for {ally_share%} as long; your own strength x{strength}.", 0.75, 1, 1, 1, "ally_range", 8, "ally_share", 0.5);
+		material("gold", "When a trim gives you a status effect, allies within {ally_range} blocks (your team, never someone you're fighting) get it too for {ally_share%} as long; your own strength x{strength}.", 0.75, 1, 1, 1, "ally_range", 8, "ally_share", 0.5);
 		material("redstone", "Cooldown x{cooldown}, but duration x{duration}.", 1, 0.6, 0.6, 1);
 		material("lapis", "Strength x{strength}, but each trigger costs {xp_cost} XP points (competes with Mending).", 1.25, 1, 1, 1, "xp_cost", 2);
 		material("amethyst", "Range x{range}, but triggering plays a chime that alerts mobs and sculk.", 1, 1, 1, 1.5);
@@ -78,7 +78,7 @@ public final class Perks {
 		material("netherite", "Strength x{strength} and duration x{duration}, but armor slows you {armor_slow%} per piece and tools attack/mine {tool_slow%} slower.", 1.25, 1.25, 1, 1, "armor_slow", 0.025, "tool_slow", 0.05);
 		material("resin", "The effect lingers {linger}s after you unequip or swap away, but strength x{strength}.", 0.85, 1, 1, 1, "linger", 5);
 
-		add(Kind.ARMOR, "sentry", "{chance%} chance to catch an arrow that hits you: no damage, and the arrow goes to your inventory.", "chance", 0.2);
+		add(Kind.ARMOR, "sentry", "{chance%} chance to catch an arrow that hits you: no damage, and you keep the arrow if it could be picked up.", "chance", 0.2);
 		add(Kind.ARMOR, "dune", "No suffocation from falling blocks; Speed {speed_level} on sand.", "speed_level", 1);
 		add(Kind.ARMOR, "coast", "Swim {swim%} faster. Doesn't work with Depth Strider boots.", "swim", 0.3);
 		add(Kind.ARMOR, "wild", "Cactus and berry bushes don't hurt you; leaves don't slow you.");
@@ -114,13 +114,13 @@ public final class Perks {
 		add(Kind.WEAPON, "raiser", "Hits pop light mobs upward.");
 		add(Kind.WEAPON, "host", "Your pets deal +{damage%} damage to whatever you hit.", "damage", 0.2);
 		add(Kind.WEAPON, "flow", "+{speed%} attack speed for {duration}s after a sprint hit.", "speed", 0.15, "duration", 3);
-		add(Kind.WEAPON, "bolt", "Every {hits}th hit sparks {damage} damage to a nearby mob.", "hits", 5, "damage", 2);
+		add(Kind.WEAPON, "bolt", "Every {hits}th hit sparks {damage} damage to a nearby hostile mob.", "hits", 5, "damage", 2);
 
 		add(Kind.TOOL, "sentry", "Ores drop {xp%} more XP.", "xp", 0.25);
 		add(Kind.TOOL, "dune", "Mines sand and gravel {speed%} faster.", "speed", 0.5);
 		add(Kind.TOOL, "coast", "Fishing rod: fish bite {lure%} sooner.", "lure", 0.2);
 		add(Kind.TOOL, "wild", "Hoe: right-click a fully grown crop to harvest and replant it.");
-		add(Kind.TOOL, "ward", "Stops at 1 durability instead of breaking.");
+		add(Kind.TOOL, "ward", "Stops at 1 durability instead of breaking; repair it to keep mining.");
 		add(Kind.TOOL, "eye", "Sneak + right-click the air to see how many ores are within {range} blocks (count only). {cooldown}s cooldown.", "range", 5, "cooldown", 120);
 		add(Kind.TOOL, "vex", "Mines {speed%} faster at light level {light} or lower.", "speed", 0.1, "light", 7);
 		add(Kind.TOOL, "tide", "Full mining speed while swimming.");
@@ -133,7 +133,7 @@ public final class Perks {
 		add(Kind.TOOL, "raiser", "Hoe: right-click to bonemeal one crop. {cooldown}s cooldown.", "cooldown", 30);
 		add(Kind.TOOL, "host", "Your kills heal nearby pets {hearts} hearts.", "hearts", 2);
 		add(Kind.TOOL, "flow", "Chain-mining gets {per_block%} faster per block, up to {max%}.", "per_block", 0.05, "max", 0.25);
-		add(Kind.TOOL, "bolt", "Axe: fells the whole tree, up to {max_logs} logs (1 durability each). Sneak to break just one log.", "max_logs", 64);
+		add(Kind.TOOL, "bolt", "Axe: fells a whole natural tree (not builds), up to {max_logs} logs (1 durability each). Sneak to break just one log.", "max_logs", 64);
 	}
 
 	public static Map<String, Double> defaults() {

@@ -8,7 +8,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.tag.convention.v2.ConventionalBlockTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -72,7 +71,6 @@ public final class Effects {
 
 	public static void register() {
 		ServerTickEvents.END_SERVER_TICK.register(Effects::tick);
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> Trims.forget(handler.getPlayer()));
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register(Effects::allowDamage);
 		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, base, taken, blocked) -> afterDamage(entity, source, taken));
 		ServerEntityCombatEvents.AFTER_KILLED_OTHER_ENTITY.register((level, killer, killed, source) -> afterKill(killer, killed));
@@ -131,8 +129,8 @@ public final class Effects {
 			for (Mob mob : p.level().getEntitiesOfClass(Mob.class, p.getBoundingBox().inflate(armor.reach("range"))))
 				mob.addEffect(new MobEffectInstance(MobEffects.GLOWING, armor.ticks("duration"), 0, false, false));
 		}
-		if (a.equals("flow") && jumping && !st.wasJumping && !p.onGround() && !p.isFallFlying() && !p.isInWater()
-				&& !p.getAbilities().flying && Trims.trigger(p, armor, "cooldown")) {
+		if (a.equals("flow") && jumping && !st.wasJumping && !p.onGround() && !p.isFallFlying() && !p.isInWater() && !p.isInLava()
+				&& !p.onClimbable() && !p.isPassenger() && !p.getAbilities().flying && Trims.trigger(p, armor, "cooldown")) {
 			Vec3 look = p.getLookAngle().multiply(1, 0, 1).normalize().scale(0.9 * armor.strength());
 			p.setDeltaMovement(p.getDeltaMovement().add(look.x, 0.35, look.z));
 			launch(p);
@@ -154,7 +152,7 @@ public final class Effects {
 		double attack = 0;
 		if (weapon != null && weapon.pattern().equals("vex")) attack += weapon.power("speed", null);
 		if (weapon != null && weapon.pattern().equals("flow") && now < st.timers.getOrDefault("flow", 0L)) attack += weapon.power("speed", null);
-		boolean netheriteHeld = isNetherite(p.getMainHandItem());
+		boolean netheriteHeld = p.getMainHandItem().is(Trims.TRIMMABLE_TOOLS) && isNetherite(p.getMainHandItem());
 		if (netheriteHeld) attack -= TrimPerks.config.get("material.netherite.tool_slow");
 		mod(p, Attributes.ATTACK_SPEED, "attack", attack, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 		mod(p, Attributes.ENTITY_INTERACTION_RANGE, "shaper_weapon", weapon != null && weapon.pattern().equals("shaper")
@@ -182,6 +180,11 @@ public final class Effects {
 			}
 		}
 		if (netheriteHeld) mine *= 1 - TrimPerks.config.get("material.netherite.tool_slow");
+		ItemStack held = p.getMainHandItem();
+		if (tool != null && tool.pattern().equals("ward") && held.isDamageableItem() && held.getDamageValue() >= held.getMaxDamage() - 1) {
+			mine = 0; // "broken": it's saved from breaking, but has to be repaired before it mines again
+			if (now % 40 == 0) p.sendOverlayMessage(Component.literal("This tool needs repairing"));
+		}
 		mod(p, Attributes.BLOCK_BREAK_SPEED, "mining", mine - 1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 	}
 
@@ -209,8 +212,9 @@ public final class Effects {
 		switch (armor.pattern()) {
 			case "sentry" -> {
 				if (source.getDirectEntity() instanceof AbstractArrow arrow && p.getRandom().nextDouble() < armor.power("chance", attacker)) {
+					boolean keep = arrow.pickup == AbstractArrow.Pickup.ALLOWED;
 					arrow.discard();
-					if (!p.getInventory().add(new ItemStack(Items.ARROW))) p.spawnAtLocation((ServerLevel) p.level(), new ItemStack(Items.ARROW));
+					if (keep && !p.getInventory().add(new ItemStack(Items.ARROW))) p.spawnAtLocation((ServerLevel) p.level(), new ItemStack(Items.ARROW));
 					p.level().playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 1f, 1f);
 					return false;
 				}
@@ -225,7 +229,7 @@ public final class Effects {
 			case "wild" -> { if (source.is(DamageTypes.CACTUS) || source.is(DamageTypes.SWEET_BERRY_BUSH)) return false; }
 			case "spire" -> {
 				if (source.is(DamageTypeTags.IS_FALL) && !Trims.armorHasEnchant(p, Enchantments.FEATHER_FALLING)
-						&& p.fallDistance <= armor.power("max_height", null) && Trims.trigger(p, armor, "cooldown")) return false;
+						&& Math.max(p.fallDistance, amount + 3) <= armor.power("max_height", null) && Trims.trigger(p, armor, "cooldown")) return false;
 			}
 			case "dune" -> {
 				if (source.is(DamageTypes.IN_WALL) && p.level().getBlockState(BlockPos.containing(p.getEyePosition())).getBlock() instanceof FallingBlock) return false;
@@ -319,10 +323,10 @@ public final class Effects {
 			case "flow" -> { if (p.isSprinting()) Trims.state(p).timers.put("flow", Trims.now(p.level()) + w.ticks("duration")); }
 			case "bolt" -> {
 				Trims.State st = Trims.state(p);
-				if (++st.counter % Math.max(1, (int) w.raw("hits")) != 0) return;
+				if (++st.hits % Math.max(1, (int) w.raw("hits")) != 0) return;
 				LivingEntity next = null;
 				for (LivingEntity e : p.level().getEntitiesOfClass(LivingEntity.class, victim.getBoundingBox().inflate(4)))
-					if (e != victim && e != p && !(e instanceof TamableAnimal t && t.isOwnedBy(p)) && (next == null || e.distanceTo(victim) < next.distanceTo(victim))) next = e;
+					if (e != victim && e instanceof net.minecraft.world.entity.monster.Enemy && (next == null || e.distanceTo(victim) < next.distanceTo(victim))) next = e;
 				if (next != null && p.level() instanceof ServerLevel level) {
 					sparking = true;
 					next.hurtServer(level, level.damageSources().playerAttack(p), (float) w.power("damage", next));
@@ -352,6 +356,7 @@ public final class Effects {
 		switch (t.pattern()) {
 			case "wayfinder" -> MAGNETS.add(new Magnet(level, Vec3.atCenterOf(pos), p));
 			case "flow" -> {
+				if (felling) return;
 				st.counter = now - st.timers.getOrDefault("chain", 0L) < 60 ? st.counter + 1 : 1;
 				st.timers.put("chain", now);
 			}
@@ -362,31 +367,45 @@ public final class Effects {
 					if (n > 0) net.minecraft.world.level.block.Block.popResource(level, pos, new ItemStack(Items.GOLD_NUGGET, n));
 				}
 			}
-			case "bolt" -> { if (state.is(BlockTags.LOGS) && p.getMainHandItem().is(ItemTags.AXES) && !p.isShiftKeyDown()) fellTree(level, p, pos, t); }
+			case "bolt" -> { if (!felling && state.is(BlockTags.LOGS) && p.getMainHandItem().is(ItemTags.AXES) && !p.isShiftKeyDown()) fellTree(level, p, pos, t); }
 			default -> {}
 		}
 	}
 
+	private static boolean felling;
+
+	/**
+	 * Bolt axe. Breaks the connected logs through the player's own block breaking, so claim and protection mods,
+	 * spawn protection, tool damage, Fortune and stats all work as normal. Only fells natural trees (logs touching
+	 * natural leaves), so a log cabin doesn't come down.
+	 */
 	private static void fellTree(ServerLevel level, ServerPlayer p, BlockPos start, Active t) {
 		int max = (int) t.raw("max_logs");
-		Set<BlockPos> seen = new HashSet<>();
-		ArrayDeque<BlockPos> queue = new ArrayDeque<>();
-		queue.add(start);
-		seen.add(start);
-		int broken = 0;
-		while (!queue.isEmpty() && broken < max) {
+		Set<BlockPos> seen = new HashSet<>(List.of(start));
+		ArrayDeque<BlockPos> queue = new ArrayDeque<>(List.of(start));
+		List<BlockPos> logs = new ArrayList<>();
+		boolean natural = false;
+		while (!queue.isEmpty() && logs.size() < max) {
 			BlockPos at = queue.poll();
-			for (BlockPos next : BlockPos.betweenClosed(at.offset(-1, 0, -1), at.offset(1, 1, 1))) {
-				if (broken >= max || seen.contains(next) || !level.getBlockState(next).is(BlockTags.LOGS)) continue;
-				BlockPos n = next.immutable();
-				seen.add(n);
-				ItemStack axe = p.getMainHandItem();
-				if (axe.isEmpty() || !axe.is(ItemTags.AXES) || axe.getMaxDamage() - axe.getDamageValue() <= 1) return;
-				level.destroyBlock(n, true, p);
-				axe.hurtAndBreak(1, p, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
-				broken++;
-				queue.add(n);
+			for (BlockPos next : BlockPos.betweenClosed(at.offset(-1, -1, -1), at.offset(1, 1, 1))) {
+				BlockState s = level.getBlockState(next);
+				if (!natural && s.is(BlockTags.LEAVES) && s.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.PERSISTENT)
+						&& !s.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.PERSISTENT)) natural = true;
+				if (logs.size() >= max || next.getY() < start.getY() || !s.is(BlockTags.LOGS) || !seen.add(next.immutable())) continue;
+				logs.add(next.immutable());
+				queue.add(next.immutable());
 			}
+		}
+		if (!natural) return;
+		felling = true;
+		try {
+			for (BlockPos log : logs) {
+				ItemStack axe = p.getMainHandItem();
+				if (axe.isEmpty() || !axe.is(ItemTags.AXES) || axe.getMaxDamage() - axe.getDamageValue() <= 1) break;
+				p.gameMode.destroyBlock(log);
+			}
+		} finally {
+			felling = false;
 		}
 	}
 
@@ -396,9 +415,10 @@ public final class Effects {
 		if (t == null) return InteractionResult.PASS;
 		BlockPos pos = hit.getBlockPos();
 		BlockState state = level.getBlockState(pos);
+		if (!p.mayBuild() || !level.mayInteract(p, pos)) return InteractionResult.PASS;
 		if (t.pattern().equals("wild") && state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state)) {
-			level.destroyBlock(pos, true, p);
-			level.setBlockAndUpdate(pos, crop.getStateForAge(0));
+			// through normal block breaking, so protection mods can say no
+			if (p.gameMode.destroyBlock(pos) && level.getBlockState(pos).isAir()) level.setBlockAndUpdate(pos, crop.getStateForAge(0));
 			return InteractionResult.SUCCESS;
 		}
 		if (t.pattern().equals("raiser") && state.getBlock() instanceof CropBlock crop && !crop.isMaxAge(state)

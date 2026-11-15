@@ -91,6 +91,19 @@ Change one thing at a time and give players a few days before changing it again.
 - **Mixed materials on armor:** each piece gives 25% of its material's modifiers.
 - **Resin:** keeps an effect working for a few seconds after the item is removed or swapped away.
 
+## Working with other mods and packs
+- **Claim and protection mods:** tree felling (Bolt axe) and crop harvesting (Wild hoe) break each block through the
+  player's normal block breaking, so claims, spawn protection and adventure mode apply to every block.
+  Bonemealing (Raiser hoe) respects spawn protection and adventure mode.
+- **Other resource packs:** the TrimPerks pack replaces the item definition files (`assets/minecraft/items/`) of
+  the tools it covers. Packs that only change tool *textures or models* work fine together with it. A pack that
+  replaces those same item definitions (custom 3D tools, CIT-style packs) wins if it's loaded above TrimPerks, and
+  then the overlays won't show on those tools. Put TrimPerks above it to keep the overlays.
+- **Custom model data:** TrimPerks only sets custom model data on trimmed tools that have none, and never overwrites
+  custom model data from another plugin or mod.
+- **Players without the mod:** putting flint in a grindstone may flicker for a moment on their screen before it
+  lands in the slot. The server decides, so it still works.
+
 ## Files
 - `config/trimperks.json`: `values` holds every number, and `disabled` lists turned-off effects. Safe to edit by
   hand, then `/reload`. Unknown keys are dropped and missing ones are filled with defaults.

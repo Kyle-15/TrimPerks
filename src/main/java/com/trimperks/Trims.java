@@ -168,7 +168,7 @@ public final class Trims {
 		final Map<Perks.Kind, Active> last = new HashMap<>();
 		final Map<Perks.Kind, Long> lastUntil = new HashMap<>();
 		public final Map<String, Long> timers = new HashMap<>();
-		public int counter;
+		public int counter, hits;
 		public boolean wasJumping, wasSneaking;
 	}
 
@@ -180,7 +180,7 @@ public final class Trims {
 
 	/** The working effect of this kind, or null. Resin keeps a removed trim working for a few seconds. */
 	public static Active get(Player player, Perks.Kind kind) {
-		if (!(player instanceof ServerPlayer)) return null;
+		if (!(player instanceof ServerPlayer) || player.isSpectator()) return null;
 		Active a = kind == Perks.Kind.ARMOR ? readArmor(player) : readHeld(player, kind);
 		State st = state(player);
 		long now = now(player.level());
@@ -230,6 +230,8 @@ public final class Trims {
 		for (ServerPlayer other : level.players()) {
 			if (other == player || other.distanceTo(player) > a.allyRange()) continue;
 			if (player.getTeam() != null && player.getTeam() != other.getTeam()) continue;
+			// never with someone you're fighting (hit them or got hit by them in the last few seconds)
+			if (player.getLastHurtByMob() == other || player.getLastHurtMob() == other || other.getLastHurtMob() == player) continue;
 			other.addEffect(new MobEffectInstance(effect, share, amplifier, false, true));
 		}
 	}
