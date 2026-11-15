@@ -66,7 +66,7 @@ public final class Effects {
 	public static ServerPlayer breaker;
 	public static BlockState breaking;
 	private static boolean sparking;
-	private record Magnet(ServerLevel level, Vec3 at, ServerPlayer player) {}
+	private record Magnet(ServerLevel level, AABB area, ServerPlayer player) {}
 	private static final List<Magnet> MAGNETS = new ArrayList<>();
 
 	public static void register() {
@@ -97,7 +97,7 @@ public final class Effects {
 		for (ServerPlayer p : server.getPlayerList().getPlayers()) tickPlayer(p);
 		for (Magnet m : MAGNETS) {
 			if (m.player().isRemoved()) continue;
-			for (ItemEntity item : m.level().getEntitiesOfClass(ItemEntity.class, new AABB(m.at(), m.at()).inflate(1.5), e -> e.tickCount < 3)) {
+			for (ItemEntity item : m.level().getEntitiesOfClass(ItemEntity.class, m.area(), e -> e.tickCount < 2 && e.getOwner() == null)) {
 				item.setPos(m.player().getX(), m.player().getY(), m.player().getZ());
 				item.setNoPickUpDelay();
 			}
@@ -108,10 +108,14 @@ public final class Effects {
 	private static void tickPlayer(ServerPlayer p) {
 		Trims.syncModel(p.getMainHandItem()); // covers tools trimmed by commands or before the pack existed
 		Cooldowns.tick(p, Trims.now(p.level()));
+		Trims.tickAbsorption(p);
 		Active armor = Trims.get(p, Kind.ARMOR), weapon = Trims.get(p, Kind.WEAPON), tool = Trims.get(p, Kind.TOOL);
 		Trims.State st = Trims.state(p);
 		long now = Trims.now(p.level());
 		String a = armor == null ? "" : armor.pattern();
+		// PvP stat boosts (reach, attack speed, dash) can't be aimed at one target, so they drop to the PvP strength
+		// while another player is close enough to fight
+		double pvp = pvpNearby(p) ? TrimPerks.config.get("general.pvp_multiplier") : 1;
 
 		// Armor: attributes
 		mod(p, Attributes.WATER_MOVEMENT_EFFICIENCY, "coast", a.equals("coast") && !Trims.armorHasEnchant(p, Enchantments.DEPTH_STRIDER)
@@ -121,7 +125,7 @@ public final class Effects {
 		mod(p, Attributes.BLOCK_INTERACTION_RANGE, "shaper_armor", a.equals("shaper") ? armor.power("reach", null) : 0, AttributeModifier.Operation.ADD_VALUE);
 		mod(p, Attributes.JUMP_STRENGTH, "raiser", a.equals("raiser") && p.isSprinting() ? 0.1 * armor.power("level", null) : 0, AttributeModifier.Operation.ADD_VALUE);
 		double speed = a.equals("dune") && p.getBlockStateOn().is(BlockTags.SAND) ? 0.2 * armor.power("speed_level", null) : 0;
-		speed -= TrimPerks.config.get("material.netherite.armor_slow") * netheritePieces(p);
+		speed -= TrimPerks.config.get("material.netherite.armor_slow") * (armor == null ? 0 : armor.netherite());
 		mod(p, Attributes.MOVEMENT_SPEED, "speed", speed, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 
 		// Armor: timed and input effects
@@ -145,7 +149,7 @@ public final class Effects {
 				&& !p.getAbilities().mayfly && !p.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).has(net.minecraft.core.component.DataComponents.GLIDER)
 				&& Trims.trigger(p, armor, "cooldown")) {
 			st.flowArmed = false;
-			Vec3 look = p.getLookAngle().multiply(1, 0, 1).normalize().scale(0.9 * armor.strength());
+			Vec3 look = p.getLookAngle().multiply(1, 0, 1).normalize().scale(0.9 * armor.strength() * pvp);
 			p.setDeltaMovement(p.getDeltaMovement().add(look.x, 0.35, look.z));
 			launch(p);
 			p.level().playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.BREEZE_JUMP, SoundSource.PLAYERS, 0.7f, 1.2f);
@@ -164,13 +168,13 @@ public final class Effects {
 
 		// Held weapon: attack speed and reach
 		double attack = 0;
-		if (weapon != null && weapon.pattern().equals("vex")) attack += weapon.power("speed", null);
-		if (weapon != null && weapon.pattern().equals("flow") && now < st.timers.getOrDefault("flow", 0L)) attack += weapon.power("speed", null);
-		boolean netheriteHeld = p.getMainHandItem().is(Trims.TRIMMABLE_TOOLS) && isNetherite(p.getMainHandItem());
+		if (weapon != null && weapon.pattern().equals("vex")) attack += weapon.power("speed", null) * pvp;
+		if (weapon != null && weapon.pattern().equals("flow") && now < st.timers.getOrDefault("flow", 0L)) attack += weapon.power("speed", null) * pvp;
+		boolean netheriteHeld = (weapon != null && weapon.netherite() > 0) || (tool != null && tool.netherite() > 0);
 		if (netheriteHeld) attack -= TrimPerks.config.get("material.netherite.tool_slow");
 		mod(p, Attributes.ATTACK_SPEED, "attack", attack, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 		mod(p, Attributes.ENTITY_INTERACTION_RANGE, "shaper_weapon", weapon != null && weapon.pattern().equals("shaper")
-			? weapon.power("reach", null) : 0, AttributeModifier.Operation.ADD_VALUE);
+			? weapon.power("reach", null) * pvp : 0, AttributeModifier.Operation.ADD_VALUE);
 
 		// Held mining tool: mining speed (attributes, so the player's own client mines faster too)
 		mod(p, Attributes.BLOCK_INTERACTION_RANGE, "shaper_tool", tool != null && tool.pattern().equals("shaper")
@@ -298,10 +302,8 @@ public final class Effects {
 		// Armor reacting to being hit
 		if (victim instanceof ServerPlayer p) {
 			Active armor = Trims.get(p, Kind.ARMOR);
-			if (armor != null && armor.pattern().equals("ward") && p.getHealth() < armor.raw("hearts") * 2 && Trims.trigger(p, armor, "cooldown")) {
-				Trims.buff(p, armor, MobEffects.RESISTANCE, armor.ticks("duration"), 0);
-				Trims.state(p).timers.put("ward", Trims.now(p.level()) + armor.ticks("duration"));
-			}
+			if (armor != null && armor.pattern().equals("ward") && p.getHealth() < armor.raw("below") * 2 && Trims.trigger(p, armor, "cooldown"))
+				Trims.absorb(p, armor, armor.power("absorption", source.getEntity()), armor.ticks("duration"));
 			if (armor != null && armor.pattern().equals("bolt") && source.getEntity() instanceof LivingEntity attacker
 					&& source.getDirectEntity() == attacker && attacker.distanceTo(p) < 5 && Trims.trigger(p, armor, "cooldown")) {
 				Vec3 away = attacker.position().subtract(p.position()).multiply(1, 0, 1).normalize()
@@ -317,7 +319,8 @@ public final class Effects {
 		if (w == null) return;
 		boolean crit = isCrit(p);
 		switch (w.pattern()) {
-			case "dune" -> victim.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, w.ticks("duration"), 0), p);
+			case "dune" -> victim.addEffect(new MobEffectInstance(MobEffects.SLOWNESS,
+				(int) (w.ticks("duration") * (victim instanceof Player ? TrimPerks.config.get("general.pvp_multiplier") : 1)), 0), p);
 			case "wild" -> { if (crit) victim.addEffect(new MobEffectInstance(MobEffects.POISON, w.ticks("duration"), 0), p); }
 			case "eye" -> { if (crit) victim.addEffect(new MobEffectInstance(MobEffects.GLOWING, w.ticks("duration"), 0), p); }
 			case "rib" -> { if (crit && !Trims.hasEnchant(p.getMainHandItem(), Enchantments.FIRE_ASPECT)) victim.igniteForTicks(w.ticks("duration")); }
@@ -357,8 +360,8 @@ public final class Effects {
 		Active w = Trims.get(p, Kind.WEAPON), t = Trims.get(p, Kind.TOOL);
 		// Ward and Host only reward real fights: hostile mobs and players, not farm animals
 		boolean fight = killed instanceof net.minecraft.world.entity.monster.Enemy || killed instanceof Player;
-		if (fight && w != null && w.pattern().equals("ward") && Trims.trigger(p, w, "cooldown")) Trims.buff(p, w, MobEffects.ABSORPTION, w.ticks("duration"), 0);
-		if (w != null && w.pattern().equals("wayfinder")) MAGNETS.add(new Magnet(level, killed.position(), p));
+		if (fight && w != null && w.pattern().equals("ward") && Trims.trigger(p, w, "cooldown")) Trims.absorb(p, w, w.power("absorption", killed), w.ticks("duration"));
+		if (w != null && w.pattern().equals("wayfinder")) MAGNETS.add(new Magnet(level, killed.getBoundingBox().inflate(0.5), p));
 		if (fight && t != null && t.pattern().equals("host")) for (TamableAnimal pet : pets(p, 16)) pet.heal((float) (t.raw("hearts") * 2 * t.strength()));
 	}
 
@@ -370,14 +373,14 @@ public final class Effects {
 		Trims.State st = Trims.state(p);
 		long now = Trims.now(level);
 		switch (t.pattern()) {
-			case "wayfinder" -> MAGNETS.add(new Magnet(level, Vec3.atCenterOf(pos), p));
+			case "wayfinder" -> MAGNETS.add(new Magnet(level, new AABB(pos).inflate(0.25), p));
 			case "flow" -> {
 				if (felling) return;
 				st.counter = now - st.timers.getOrDefault("chain", 0L) < 60 ? st.counter + 1 : 1;
 				st.timers.put("chain", now);
 			}
 			case "snout" -> {
-				if (state.is(Blocks.NETHER_GOLD_ORE) || state.is(Blocks.GILDED_BLACKSTONE)) {
+				if ((state.is(Blocks.NETHER_GOLD_ORE) || state.is(Blocks.GILDED_BLACKSTONE)) && !Trims.hasEnchant(p.getMainHandItem(), Enchantments.SILK_TOUCH)) {
 					double extra = 4 * t.power("bonus", null);
 					int n = (int) extra + (p.getRandom().nextDouble() < extra - (int) extra ? 1 : 0);
 					if (n > 0) net.minecraft.world.level.block.Block.popResource(level, pos, new ItemStack(Items.GOLD_NUGGET, n));
@@ -466,21 +469,6 @@ public final class Effects {
 		return p.level().getEntitiesOfClass(TamableAnimal.class, p.getBoundingBox().inflate(range), pet -> pet.isOwnedBy(p));
 	}
 
-	private static boolean isNetherite(ItemStack stack) {
-		ArmorTrim trim = Trims.trim(stack);
-		return trim != null && Trims.pathOf(trim.material()).equals("netherite") && !TrimPerks.config.disabled.contains("netherite")
-			&& !TrimPerks.config.disabled.contains("material.netherite");
-	}
-
-	private static int netheritePieces(ServerPlayer p) {
-		int n = 0;
-		for (net.minecraft.world.entity.EquipmentSlot slot : new net.minecraft.world.entity.EquipmentSlot[] {
-				net.minecraft.world.entity.EquipmentSlot.HEAD, net.minecraft.world.entity.EquipmentSlot.CHEST,
-				net.minecraft.world.entity.EquipmentSlot.LEGS, net.minecraft.world.entity.EquipmentSlot.FEET})
-			if (isNetherite(p.getItemBySlot(slot))) n++;
-		return n;
-	}
-
 	private static void mod(ServerPlayer p, Holder<Attribute> attribute, String name, double amount, AttributeModifier.Operation op) {
 		AttributeInstance inst = p.getAttribute(attribute);
 		if (inst == null) return;
@@ -502,10 +490,11 @@ public final class Effects {
 		return (int) v + (breaker.getRandom().nextDouble() < v - (int) v ? 1 : 0);
 	}
 
-	/** The Protection + trims damage cap, while a Ward resistance from a trim is active (LivingEntityMixin). */
-	public static float capReduction(LivingEntity victim, float before, float after) {
-		if (!(victim instanceof ServerPlayer p) || Trims.now(p.level()) >= Trims.state(p).timers.getOrDefault("ward", 0L)) return after;
-		return Math.max(after, before * (float) (1 - TrimPerks.config.get("general.max_damage_reduction")));
+	/** Another player (not a spectator) within 8 blocks: a fight could be on. */
+	private static boolean pvpNearby(ServerPlayer p) {
+		for (Player other : p.level().players())
+			if (other != p && !other.isSpectator() && other.distanceToSqr(p) < 64) return true;
+		return false;
 	}
 
 	private Effects() {}

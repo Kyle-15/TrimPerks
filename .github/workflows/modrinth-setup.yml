@@ -1,0 +1,23 @@
+# One-time Modrinth page setup: create the draft project, update its page from listing/, or submit it for review.
+name: Modrinth page
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "create = new draft page, update = push listing/ text, submit = send for review"
+        type: choice
+        options: ["create", "update", "submit"]
+        default: "create"
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: python3 scripts/modrinth_project.py "${{ inputs.action }}"

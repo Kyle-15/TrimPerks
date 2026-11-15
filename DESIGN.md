@@ -113,5 +113,6 @@ real playtest. Op docs: OP_GUIDE.md.
 3. Tool trims through smithing, plus a generic tool overlay model.
 4. Retrim: empty-template material swap, grindstone + flint removal, 60s settle timer.
 5. Two patterns end-to-end to test feel: **Spire** (armor) and **Wayfinder** (tool).
-6. Remaining patterns in batches; overlap/override rules; damage cap.
+6. Remaining patterns in batches; overlap/override rules. (The damage cap was dropped in 0.2.0 when Ward moved from
+   Resistance to Absorption; see TODO.md for the 0.2.0 balance pass.)
 7. Release workflow (GitHub → Modrinth/CurseForge) like TweakSwitch.

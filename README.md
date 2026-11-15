@@ -8,7 +8,7 @@ single best trim, and everything is tunable in-game.
 - **Tools and weapons can be trimmed too.** Each of the 18 patterns has a weapon effect and a mining-tool effect, plus its own texture overlay.
 - **Materials** change the numbers: Redstone shortens cooldowns but also durations, Gold shares buffs with allies, Lapis is stronger but costs XP, and so on.
 - **Retrimming:** swap just the material at a smithing table with the template slot empty (flat 3 levels), or remove a trim with **flint** at a grindstone. Enchantments are never touched.
-- **Balanced for PvP and survival:** new trims settle for 60s, PvP effects are scaled separately, and Protection plus trims has a damage cap.
+- **Balanced for PvP and survival:** new trims settle for 60s, PvP effects are scaled separately, and every material is a real trade-off.
 - **Server-side:** players don't need the mod. `/trimperks guide` opens a window listing every effect with the live numbers.
 
 ## Install

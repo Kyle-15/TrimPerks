@@ -1,0 +1,8 @@
+{
+  "title": "TrimPerks",
+  "summary": "Armor and tool trims with balanced effects. The pattern decides what a trim does, the material decides how. Server-side.",
+  "modrinth_categories": ["equipment", "game-mechanics", "adventure"],
+  "curseforge_categories": ["Armor, Tools, and Weapons", "Server Utility", "Adventure and RPG"],
+  "source": "https://github.com/Kyle-15/TrimPerks",
+  "issues": "https://github.com/Kyle-15/TrimPerks/issues"
+}

@@ -1,0 +1,52 @@
+# Uploads a published GitHub release (mod jar + resource pack) to Modrinth and CurseForge.
+# Needs secrets MODRINTH_TOKEN and CURSEFORGE_TOKEN, and the repository variable CURSEFORGE_PROJECT (project id).
+name: Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to upload, like v0.2.0"
+        required: true
+      sites:
+        description: "Which sites"
+        type: choice
+        options: ["modrinth,curseforge", "modrinth", "curseforge"]
+        default: "modrinth,curseforge"
+      dry_run:
+        description: "Dry run: check everything, upload nothing"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get the release's files and notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          mkdir dl
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern 'trimperks-*.jar' --pattern 'TrimPerks-Resources.zip' --dir dl
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body > notes.md
+          ls -l dl
+      - name: Upload
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          CURSEFORGE_PROJECT: ${{ vars.CURSEFORGE_PROJECT }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          SITES: ${{ inputs.sites || 'modrinth,curseforge' }}
+          DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+        run: python3 scripts/publish.py --tag "$TAG" --files dl --changelog-file notes.md --sites "$SITES" $DRY_RUN

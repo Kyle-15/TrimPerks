@@ -13,10 +13,10 @@ shovels, hoes (every tier), maces, bows, crossbows and fishing rods, tinted in t
 Tridents get the effects but no overlay (in hand they're 3D models).
 
 - **Players with the mod installed** see them automatically.
-- **Players without the mod** need the resource pack. For 0.1.0, put this in `server.properties`:
+- **Players without the mod** need the resource pack. For 0.2.0, put this in `server.properties`:
   ```
-  resource-pack=https://github.com/Kyle-15/TrimPerks/releases/download/v0.1.0/TrimPerks-Resources.zip
-  resource-pack-sha1=340db6ff67b2b763bb24c4250eb34e52a052b008
+  resource-pack=https://github.com/Kyle-15/TrimPerks/releases/download/v0.2.0/TrimPerks-Resources.zip
+  resource-pack-sha1=6184cdfed475a4a6f5eb7c19cdf023f892e404c9
   require-resource-pack=false
   ```
   For a newer release, use that release's `TrimPerks-Resources.zip` link and its sha1 (`shasum -a 1 TrimPerks-Resources.zip`).
@@ -66,10 +66,11 @@ Units:
 | `general.pvp_multiplier` | 0.75 | Strength of [PvP] effects when they hit or protect against a player. Survival vs mobs is unaffected. |
 | `general.settle_seconds` | 60 | How long a new or changed trim stays inactive. Stops mid-fight swapping. |
 | `general.material_swap_levels` | 3 | XP levels for a material-only retrim. Flat: it never grows with repeats. |
-| `general.max_damage_reduction` | 0.64 | Protection + Ward's Resistance can never block more than this (0.64 = Protection IV). |
 | `general.cooldown_bars` | 1 | Cooldown bars at the top of the screen. 0 turns them off for everyone. |
 
-PvP-flagged patterns: Ward, Vex, Rib, Shaper, Silence, Flow, Bolt.
+PvP-flagged patterns: Ward, Vex, Rib, Shaper, Silence, Flow, Bolt, Spire, Dune. Their numbers are scaled when they hit or
+protect against a player; their stat boosts (Shaper reach, Vex/Flow attack speed, Flow's dash) are scaled while another
+player is within 8 blocks.
 
 ## Balancing recipes
 - **Weaker in PvP only:** `set general.pvp_multiplier 0.5`
@@ -91,6 +92,11 @@ Change one thing at a time and give players a few days before changing it again.
 - **Enchantments:** never removed by trimming. A trim that overlaps an enchantment (Feather Falling, Depth Strider,
   Respiration, Fire Protection, Fire Aspect, Impaling) turns itself off while that enchantment is present.
 - **Mixed materials on armor:** each piece gives 25% of its material's modifiers.
+- **Materials only count where their trade-off means something.** If a material's upside or downside doesn't apply to
+  an effect (for example Diamond's longer cooldown on an effect with no cooldown), it works like iron there: no
+  upside, no downside, and no Netherite slowdown. Effects with no numbers (Wayfinder, Wild hoe...) aren't changed by
+  any material.
+- **Ward** gives Absorption hearts (scaled by material strength), not Resistance, so it still helps next to Protection IV.
 - **Cooldown bars:** when an effect with a cooldown fires, a boss bar fills up at the top of the screen (blue = armor,
   red = weapon, yellow = tool), then turns green with a ding when it's ready. Vanilla boss bars, so no mod needed.
 - **Kill effects** (Ward weapon, Host tool) only count hostile mobs and players, not farm animals.

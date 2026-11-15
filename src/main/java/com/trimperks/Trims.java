@@ -37,7 +37,7 @@ public final class Trims {
 
 	/** One working effect: the pattern plus the blended material multipliers. */
 	public record Active(String pattern, Perks.Kind kind, double strength, double duration, double cooldown, double range,
-			double xpCost, double skipChance, double allyShare, double allyRange, boolean chime, double linger) {
+			double xpCost, double skipChance, double allyShare, double allyRange, boolean chime, double linger, int netherite) {
 		public String key(String name) { return kind.name().toLowerCase(java.util.Locale.ROOT) + "." + pattern + "." + name; }
 		public double raw(String name) { return TrimPerks.config.get(key(name)); }
 		/** A strength-type number (chance, damage, speed...), scaled by the material and, against players, the PvP multiplier. */
@@ -106,14 +106,18 @@ public final class Trims {
 	// ---- reading gear ----
 
 	private static Active build(String pattern, Perks.Kind kind, List<String> materials, Level level) {
+		Perks.Perk perk = Perks.find(kind, pattern);
 		boolean nether = level.dimension() == Level.NETHER;
 		double n = materials.size(), s = 0, d = 0, c = 0, r = 0, xp = 0, skip = 0, ally = 0, allyRange = 0, linger = 0;
 		boolean chime = false;
+		int netherite = 0;
 		TrimPerksConfig cfg = TrimPerks.config;
 		for (String m : materials) {
 			String k = "material." + m + ".";
-			if (!TrimPerksConfig.isKey(k + "strength") || cfg.disabled.contains(m) || cfg.disabled.contains("material." + m)) {
-				s += 1; d += 1; c += 1; r += 1; // unknown (modded) or turned-off material: plain baseline
+			// unknown (modded) or turned-off materials, and materials whose trade-off means nothing here, work like iron
+			if (!TrimPerksConfig.isKey(k + "strength") || cfg.disabled.contains(m) || cfg.disabled.contains("material." + m)
+					|| perk == null || !perk.materialApplies(m)) {
+				s += 1; d += 1; c += 1; r += 1;
 				continue;
 			}
 			double str = cfg.get(k + "strength");
@@ -125,10 +129,11 @@ public final class Trims {
 				case "gold" -> { ally += cfg.get(k + "ally_share"); allyRange = cfg.get(k + "ally_range"); }
 				case "amethyst" -> chime = true;
 				case "resin" -> linger = Math.max(linger, cfg.get(k + "linger"));
+				case "netherite" -> netherite++;
 				default -> {}
 			}
 		}
-		return new Active(pattern, kind, s / n, d / n, c / n, r / n, xp / n, skip / n, ally / n, allyRange, chime, linger);
+		return new Active(pattern, kind, s / n, d / n, c / n, r / n, xp / n, skip / n, ally / n, allyRange, chime, linger, netherite);
 	}
 
 	private static boolean enabled(Perks.Kind kind, String pattern) {
@@ -227,18 +232,41 @@ public final class Trims {
 		return true;
 	}
 
-	/** Give a status effect from a trim; gold also gives allies (same team, or everyone if you're on no team) a share. */
-	public static void buff(Player player, Active a, Holder<MobEffect> effect, int ticks, int amplifier) {
-		player.addEffect(new MobEffectInstance(effect, ticks, amplifier, false, true));
+	private static final Identifier ABSORB = Identifier.fromNamespaceAndPath(TrimPerks.MOD_ID, "ward_absorption");
+
+	/**
+	 * Ward's Absorption hearts (any amount, so material strength matters). Gold also gives allies (same team, or
+	 * everyone if you're on no team, never someone you're fighting) the hearts for part of the time.
+	 */
+	public static void absorb(ServerPlayer player, Active a, double hearts, int ticks) {
+		giveAbsorption(player, hearts * 2, ticks);
 		if (a.allyShare() <= 0 || !(player.level() instanceof ServerLevel level)) return;
-		int share = (int) (ticks * a.allyShare());
 		for (ServerPlayer other : level.players()) {
-			if (other == player || other.distanceTo(player) > a.allyRange()) continue;
+			if (other == player || other.isSpectator() || other.distanceTo(player) > a.allyRange()) continue;
 			if (player.getTeam() != null && player.getTeam() != other.getTeam()) continue;
-			// never with someone you're fighting (hit them or got hit by them in the last few seconds)
 			if (player.getLastHurtByMob() == other || player.getLastHurtMob() == other || other.getLastHurtMob() == player) continue;
-			other.addEffect(new MobEffectInstance(effect, share, amplifier, false, true));
+			giveAbsorption(other, hearts * 2, (int) (ticks * a.allyShare()));
 		}
+	}
+
+	private static void giveAbsorption(ServerPlayer p, double hp, int ticks) {
+		var max = p.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_ABSORPTION);
+		if (max == null) return;
+		var current = max.getModifier(ABSORB);
+		double before = current == null ? 0 : current.amount(), amount = Math.max(before, hp);
+		max.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(ABSORB, amount,
+			net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE));
+		p.setAbsorptionAmount(p.getAbsorptionAmount() + (float) (amount - before));
+		State st = state(p);
+		st.timers.put("absorb", Math.max(st.timers.getOrDefault("absorb", 0L), now(p.level()) + ticks));
+	}
+
+	/** Every tick: take Ward's Absorption away again when it runs out. */
+	public static void tickAbsorption(ServerPlayer p) {
+		var max = p.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_ABSORPTION);
+		if (max == null || max.getModifier(ABSORB) == null || now(p.level()) < state(p).timers.getOrDefault("absorb", 0L)) return;
+		max.removeModifier(ABSORB);
+		p.setAbsorptionAmount(Math.min(p.getAbsorptionAmount(), (float) max.getValue()));
 	}
 
 	public static boolean hasEnchant(ItemStack stack, ResourceKey<Enchantment> key) {

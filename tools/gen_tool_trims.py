@@ -170,14 +170,30 @@ def overlay(px, picked):
 def signed(argb): return argb - (1 << 32) if argb >= 1 << 31 else argb
 
 
-def item_definition(vanilla, cls):
+# The tool's own material: a trim in that same material gets a darker shade so it stays visible (vanilla armor does this)
+TIER_MATERIAL = {"iron": "iron", "golden": "gold", "copper": "copper", "diamond": "diamond", "netherite": "netherite"}
+
+
+def shade(c, matching):
+    if not matching:
+        return c
+    r, g, b = (c >> 16) & 255, (c >> 8) & 255, c & 255
+    if 0.3 * r + 0.59 * g + 0.11 * b < 100:  # dark trims (netherite) on their own tool: lighter instead of darker
+        r, g, b = (int(v + (255 - v) * 0.45) for v in (r, g, b))
+    else:
+        r, g, b = (int(v * 0.55) for v in (r, g, b))
+    return (r << 16) | (g << 8) | b
+
+
+def item_definition(vanilla, cls, item):
+    own = TIER_MATERIAL.get(item.split("_")[0])
     cases = []
     for p in PATTERNS:
         model = f"trimperks:item/trim/{cls}_{p}"
         cases.append({"when": f"trimperks:{p}", "model": {
             "type": "minecraft:select", "property": "minecraft:trim_material",
             "cases": [{"when": f"minecraft:{m}", "model": {"type": "minecraft:model", "model": model,
-                       "tints": [{"type": "minecraft:constant", "value": signed(0xFF000000 | c)}]}} for m, c in MATERIALS.items()],
+                       "tints": [{"type": "minecraft:constant", "value": signed(0xFF000000 | shade(c, m == own))}]}} for m, c in MATERIALS.items()],
             "fallback": {"type": "minecraft:model", "model": model}}})
     trim = {"type": "minecraft:select", "property": "minecraft:custom_model_data", "index": 0, "cases": cases,
             "fallback": {"type": "minecraft:empty"}}
@@ -207,7 +223,7 @@ def main():
         preview_rows.append(row)
     for item, cls in ITEMS.items():
         vanilla = json.loads(jar.read(f"assets/minecraft/items/{item}.json"))
-        files[f"assets/minecraft/items/{item}.json"] = json.dumps(item_definition(vanilla, cls), separators=(",", ":")).encode()
+        files[f"assets/minecraft/items/{item}.json"] = json.dumps(item_definition(vanilla, cls, item), separators=(",", ":")).encode()
 
     for path, data in files.items():
         full = os.path.join(OUT, path)
@@ -235,6 +251,34 @@ def main():
                         for xx in range(s):
                             sheet[(r * (16 + pad) + y) * s + yy][(c * (16 + pad) + x) * s + xx] = p
     open(os.path.join(ROOT, "build/tool-trim-preview.png"), "wb").write(write_png(sheet))
+
+    # every material on a few tools (a darker shade where the trim matches the tool's own material)
+    picks = [("iron_sword", "sword", "sentry"), ("diamond_sword", "sword", "rib"), ("netherite_pickaxe", "pickaxe", "vex"),
+             ("golden_axe", "axe", "bolt"), ("copper_shovel", "shovel", "ward"), ("bow", "bow", "flow")]
+    masks = {cls: mask_of(tex(CLASSES[cls][0]), CLASSES[cls][2]) for _, cls, _ in picks}
+    rows = []
+    for m, c in MATERIALS.items():
+        row = []
+        for item, cls, pat in picks:
+            base = tex(item)
+            ov = overlay(tex(CLASSES[cls][0]), pattern(pat, masks[cls]))
+            own = TIER_MATERIAL.get(item.split("_")[0])
+            cc = shade(c, m == own)
+            t = ((cc >> 16) & 255, (cc >> 8) & 255, cc & 255)
+            row.append([[(ov[y][x][0] * t[0] // 255, ov[y][x][1] * t[1] // 255, ov[y][x][2] * t[2] // 255, 255)
+                         if ov[y][x][3] else base[y][x] for x in range(16)] for y in range(16)])
+        rows.append(row)
+    W, H = len(picks) * (16 + pad) * s, len(MATERIALS) * (16 + pad) * s
+    sheet = [[(40, 40, 46, 255)] * W for _ in range(H)]
+    for r, row in enumerate(rows):
+        for c2, cell in enumerate(row):
+            for y in range(16):
+                for x in range(16):
+                    if cell[y][x][3] < 128: continue
+                    for yy in range(s):
+                        for xx in range(s):
+                            sheet[(r * (16 + pad) + y) * s + yy][(c2 * (16 + pad) + x) * s + xx] = cell[y][x]
+    open(os.path.join(ROOT, "build/tool-trim-materials.png"), "wb").write(write_png(sheet))
     print(f"{len(files)} files, {len(ITEMS)} items, {len(CLASSES)} tool shapes x {len(PATTERNS)} patterns")
 
 

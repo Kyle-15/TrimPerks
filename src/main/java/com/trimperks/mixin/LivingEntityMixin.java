@@ -25,12 +25,6 @@ public abstract class LivingEntityMixin {
 		return Effects.modifyDamage((LivingEntity) (Object) this, source, amount);
 	}
 
-	/** Protection + trims can't block more than the cap while a Ward resistance is active. */
-	@Inject(method = "getDamageAfterMagicAbsorb", at = @At("RETURN"), cancellable = true)
-	private void trimperks$cap(DamageSource source, float before, CallbackInfoReturnable<Float> cir) {
-		cir.setReturnValue(Effects.capReduction((LivingEntity) (Object) this, before, cir.getReturnValue()));
-	}
-
 	/** Rib armor: Wither lasts shorter. */
 	@ModifyVariable(method = "addEffect(Lnet/minecraft/world/effect/MobEffectInstance;Lnet/minecraft/world/entity/Entity;)Z", at = @At("HEAD"), argsOnly = true)
 	private MobEffectInstance trimperks$wither(MobEffectInstance effect, MobEffectInstance same, Entity source) {

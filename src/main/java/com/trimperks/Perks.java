@@ -17,7 +17,36 @@ import java.util.regex.Pattern;
 public final class Perks {
 	public enum Kind { GENERAL, MATERIAL, ARMOR, WEAPON, TOOL }
 
+	/** Numbers that aren't the effect's strength: thresholds, counts and the cooldown/duration/range axes. */
+	private static final Set<String> NOT_STRENGTH = Set.of("cooldown", "duration", "range", "light", "hits", "max_logs", "below", "linger");
+	/** Effects whose result is a buff the player gets (what Gold shares with allies). */
+	private static final Set<String> BUFFS = Set.of("armor.ward", "weapon.ward");
+
 	public record Perk(Kind kind, String key, String name, String template, boolean pvp, Map<String, Double> defaults) {
+		public boolean hasStrength() { return defaults.keySet().stream().anyMatch(k -> !NOT_STRENGTH.contains(k)); }
+		public boolean hasDuration() { return defaults.containsKey("duration"); }
+		public boolean hasCooldown() { return defaults.containsKey("cooldown"); }
+		public boolean hasRange() { return defaults.containsKey("range"); }
+		public boolean isBuff() { return BUFFS.contains(key); }
+
+		/**
+		 * A material only changes an effect when both its upside and its downside mean something there; otherwise it
+		 * works like iron. So no material is a free upgrade, and none is only a downside.
+		 */
+		public boolean materialApplies(String m) {
+			return switch (m) {
+				case "copper" -> hasDuration() && hasStrength();
+				case "gold" -> isBuff() && hasStrength();
+				case "redstone" -> hasCooldown() && hasDuration();
+				case "lapis", "emerald", "diamond" -> hasStrength() && hasCooldown();
+				case "amethyst" -> hasRange() && hasCooldown();
+				case "quartz" -> hasStrength();
+				case "netherite" -> hasStrength() || hasDuration();
+				case "resin" -> hasStrength() && !hasCooldown();
+				default -> true;
+			};
+		}
+
 		public String describe(TrimPerksConfig config) {
 			Matcher m = PLACEHOLDER.matcher(template);
 			StringBuilder out = new StringBuilder();
@@ -36,7 +65,7 @@ public final class Perks {
 	public static final List<String> MATERIALS = List.of("iron", "copper", "gold", "redstone", "lapis", "amethyst",
 		"emerald", "quartz", "diamond", "netherite", "resin");
 	/** Patterns that can matter against players; config general.pvp_multiplier scales them. */
-	public static final Set<String> PVP = Set.of("ward", "vex", "rib", "shaper", "silence", "flow", "bolt");
+	public static final Set<String> PVP = Set.of("ward", "vex", "rib", "shaper", "silence", "flow", "bolt", "spire", "dune");
 
 	public static String format(double v) {
 		if (v == Math.rint(v)) return Long.toString((long) v);
@@ -61,15 +90,16 @@ public final class Perks {
 	}
 
 	static {
-		add(Kind.GENERAL, "general", "Effects marked [PvP] work at {pvp_multiplier%} strength when they hit or protect against a player. "
+		add(Kind.GENERAL, "general", "Effects marked [PvP] work at {pvp_multiplier%} strength when they hit or protect against a player, "
+			+ "and their stat boosts (reach, attack speed, dash) drop to that while another player is within 8 blocks. "
 			+ "A new or changed trim is inactive for {settle_seconds}s. A material-only retrim costs {material_swap_levels} levels "
-			+ "every time (it never grows). Protection and trims together never block more than {max_damage_reduction%} of damage. "
+			+ "every time (it never grows). "
 			+ "Cooldown bars at the top of the screen: {cooldown_bars} (1 = on, 0 = off for everyone).",
-			"pvp_multiplier", 0.75, "settle_seconds", 60, "material_swap_levels", 3, "max_damage_reduction", 0.64, "cooldown_bars", 1);
+			"pvp_multiplier", 0.75, "settle_seconds", 60, "material_swap_levels", 3, "cooldown_bars", 1);
 
 		material("iron", "The baseline: no upside, no downside.", 1, 1, 1, 1);
 		material("copper", "Lasts x{duration} as long, but strength x{strength}.", 0.75, 1.5, 1, 1);
-		material("gold", "When a trim gives you a status effect, allies within {ally_range} blocks (your team, never someone you're fighting) get it too for {ally_share%} as long; your own strength x{strength}.", 0.75, 1, 1, 1, "ally_range", 8, "ally_share", 0.5);
+		material("gold", "Ward only: when a trim gives you a status effect, allies within {ally_range} blocks (your team, never someone you're fighting) get it too for {ally_share%} as long; your own strength x{strength}.", 0.75, 1, 1, 1, "ally_range", 8, "ally_share", 0.5);
 		material("redstone", "Cooldown x{cooldown}, but duration x{duration}.", 1, 0.6, 0.6, 1);
 		material("lapis", "Strength x{strength}, but each trigger costs {xp_cost} XP points (competes with Mending).", 1.25, 1, 1, 1, "xp_cost", 2);
 		material("amethyst", "Range x{range}, but triggering plays a chime that alerts mobs and sculk.", 1, 1, 1, 1.5);
@@ -83,7 +113,7 @@ public final class Perks {
 		add(Kind.ARMOR, "dune", "No suffocation from falling blocks; Speed {speed_level} on sand.", "speed_level", 1);
 		add(Kind.ARMOR, "coast", "Swim {swim%} faster. Doesn't work with Depth Strider boots.", "swim", 0.3);
 		add(Kind.ARMOR, "wild", "Cactus and berry bushes don't hurt you; leaves don't slow you.");
-		add(Kind.ARMOR, "ward", "Below {hearts} hearts you get Resistance for {duration}s. {cooldown}s cooldown.", "hearts", 4, "duration", 3, "cooldown", 90);
+		add(Kind.ARMOR, "ward", "Below {below} hearts you get {absorption} hearts of Absorption for {duration}s. {cooldown}s cooldown.", "below", 4, "absorption", 3, "duration", 6, "cooldown", 90);
 		add(Kind.ARMOR, "eye", "Endermen don't aggro. Double-tap sneak to make mobs within {range} blocks glow for {duration}s. {cooldown}s cooldown.", "range", 16, "duration", 3, "cooldown", 60);
 		add(Kind.ARMOR, "vex", "{chance%} chance to dodge a melee hit. {cooldown}s cooldown.", "chance", 0.1, "cooldown", 20);
 		add(Kind.ARMOR, "tide", "{air%} more air underwater. Doesn't work with a Respiration helmet.", "air", 0.5);
@@ -102,7 +132,7 @@ public final class Perks {
 		add(Kind.WEAPON, "dune", "Hits slow targets for {duration}s.", "duration", 1);
 		add(Kind.WEAPON, "coast", "+{damage%} damage to aquatic mobs. Doesn't work with Impaling.", "damage", 0.2);
 		add(Kind.WEAPON, "wild", "Crits poison the target for {duration}s.", "duration", 2);
-		add(Kind.WEAPON, "ward", "Killing a hostile mob or player gives 2 hearts of Absorption for {duration}s. {cooldown}s cooldown.", "duration", 10, "cooldown", 30);
+		add(Kind.WEAPON, "ward", "Killing a hostile mob or player gives {absorption} hearts of Absorption for {duration}s. {cooldown}s cooldown.", "absorption", 2, "duration", 10, "cooldown", 30);
 		add(Kind.WEAPON, "eye", "Crits make the target glow for {duration}s.", "duration", 3);
 		add(Kind.WEAPON, "vex", "+{speed%} attack speed.", "speed", 0.1);
 		add(Kind.WEAPON, "tide", "+{knockback%} knockback in water.", "knockback", 0.5);
@@ -111,13 +141,13 @@ public final class Perks {
 		add(Kind.WEAPON, "spire", "+{damage%} damage while falling (not maces).", "damage", 0.1);
 		add(Kind.WEAPON, "wayfinder", "Mob drops fly to you.");
 		add(Kind.WEAPON, "shaper", "+{reach} attack reach.", "reach", 0.5);
-		add(Kind.WEAPON, "silence", "+{damage%} damage from behind to mobs that aren't targeting you.", "damage", 0.2);
-		add(Kind.WEAPON, "raiser", "Hits pop light mobs upward.");
+		add(Kind.WEAPON, "silence", "+{damage%} damage from behind to mobs that aren't targeting you (not players).", "damage", 0.2);
+		add(Kind.WEAPON, "raiser", "Hits pop light mobs upward (not players).");
 		add(Kind.WEAPON, "host", "Your pets deal +{damage%} damage to whatever you hit.", "damage", 0.2);
 		add(Kind.WEAPON, "flow", "+{speed%} attack speed for {duration}s after a sprint hit.", "speed", 0.15, "duration", 3);
 		add(Kind.WEAPON, "bolt", "Every {hits}th hit sparks {damage} damage to a nearby hostile mob.", "hits", 5, "damage", 2);
 
-		add(Kind.TOOL, "sentry", "Ores drop {xp%} more XP.", "xp", 0.25);
+		add(Kind.TOOL, "sentry", "Ores drop {xp%} more XP (Silk Touch ores drop none, so nothing to boost).", "xp", 0.25);
 		add(Kind.TOOL, "dune", "Mines sand and gravel {speed%} faster.", "speed", 0.5);
 		add(Kind.TOOL, "coast", "Fishing rod: fish bite {lure%} sooner.", "lure", 0.2);
 		add(Kind.TOOL, "wild", "Hoe: right-click a fully grown crop to harvest and replant it.");
@@ -125,7 +155,7 @@ public final class Perks {
 		add(Kind.TOOL, "eye", "Sneak + right-click the air to see how many ores are within {range} blocks (count only). {cooldown}s cooldown.", "range", 5, "cooldown", 120);
 		add(Kind.TOOL, "vex", "Mines {speed%} faster at light level {light} or lower.", "speed", 0.1, "light", 7);
 		add(Kind.TOOL, "tide", "Full mining speed while swimming.");
-		add(Kind.TOOL, "snout", "{bonus%} more gold from Nether gold ore and gilded blackstone.", "bonus", 0.25);
+		add(Kind.TOOL, "snout", "{bonus%} more gold from Nether gold ore and gilded blackstone (not with Silk Touch).", "bonus", 0.25);
 		add(Kind.TOOL, "rib", "Mines Nether blocks {speed%} faster.", "speed", 0.3);
 		add(Kind.TOOL, "spire", "No mining slowdown while in the air.");
 		add(Kind.TOOL, "wayfinder", "Block drops fly to you.");
@@ -135,6 +165,12 @@ public final class Perks {
 		add(Kind.TOOL, "host", "Killing a hostile mob or player heals your nearby pets {hearts} hearts.", "hearts", 2);
 		add(Kind.TOOL, "flow", "Chain-mining gets {per_block%} faster per block, up to {max%}.", "per_block", 0.05, "max", 0.25);
 		add(Kind.TOOL, "bolt", "Axe: fells a whole natural tree (not builds), up to {max_logs} logs (1 durability each). Sneak to break just one log.", "max_logs", 64);
+	}
+
+	public static Perk find(Kind kind, String pattern) {
+		String key = kind.name().toLowerCase(Locale.ROOT) + "." + pattern;
+		for (Perk p : ALL) if (p.key().equals(key)) return p;
+		return null;
 	}
 
 	public static Map<String, Double> defaults() {

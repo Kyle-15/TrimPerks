@@ -23,7 +23,8 @@ public final class Guide {
 		JsonArray buttons = new JsonArray();
 		buttons.add(button("How it works", page("How trims work", intro(c))));
 		buttons.add(button("Materials", page("Materials: how a trim works", section(c, Perks.Kind.MATERIAL,
-			"The material changes the pattern's numbers. Every material has a downside."))));
+			"The material changes the pattern's numbers. A material only counts where both its upside and its downside mean something; "
+			+ "on any other effect it works like iron (so it's never a free upgrade, and never only a downside)."))));
 		buttons.add(button("Armor sets", page("Armor patterns: full-set bonus", section(c, Perks.Kind.ARMOR,
 			"All 4 armor pieces need the same pattern. Materials can mix: each piece gives 25% of its material."))));
 		buttons.add(button("Tools & weapons", page("Tool patterns", tools(c))));
