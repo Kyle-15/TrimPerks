@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "trimperks",
+  "version": "${version}",
+  "name": "TrimPerks",
+  "description": "Armor and tool trims give balanced effects: the pattern decides what, the material decides how.",
+  "authors": ["kyle"],
+  "license": "MIT",
+  "environment": "*",
+  "mixins": ["trimperks.mixins.json"],
+  "entrypoints": { "main": ["com.trimperks.TrimPerks"] },
+  "depends": { "fabricloader": ">=0.19.5", "minecraft": "~26.3", "java": ">=25", "fabric-api": "*" }
+}

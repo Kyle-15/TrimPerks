@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/iron_pickaxe",
+  "textures": {
+    "layer0": "trimperks:item/trim/pickaxe_eye"
+  }
+}

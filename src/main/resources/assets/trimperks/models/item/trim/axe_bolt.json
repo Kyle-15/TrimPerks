@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/iron_axe",
+  "textures": {
+    "layer0": "trimperks:item/trim/axe_bolt"
+  }
+}

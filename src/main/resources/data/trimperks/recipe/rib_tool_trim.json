@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:smithing_trim",
+  "template": "minecraft:rib_armor_trim_smithing_template",
+  "base": "#trimperks:trimmable_tools",
+  "addition": "#minecraft:trim_materials",
+  "pattern": "minecraft:rib"
+}

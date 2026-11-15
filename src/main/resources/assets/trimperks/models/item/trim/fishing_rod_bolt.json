@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/fishing_rod",
+  "textures": {
+    "layer0": "trimperks:item/trim/fishing_rod_bolt"
+  }
+}

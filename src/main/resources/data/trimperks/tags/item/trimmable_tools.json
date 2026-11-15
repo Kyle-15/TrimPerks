@@ -1,0 +1,6 @@
+{
+  "values": [
+    "#minecraft:swords", "#minecraft:axes", "#minecraft:pickaxes", "#minecraft:shovels", "#minecraft:hoes",
+    "minecraft:mace", "minecraft:trident", "minecraft:bow", "minecraft:crossbow", "minecraft:fishing_rod"
+  ]
+}
