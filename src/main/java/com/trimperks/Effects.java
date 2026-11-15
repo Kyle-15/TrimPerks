@@ -135,7 +135,7 @@ public final class Effects {
 				&& !p.getAbilities().flying && Trims.trigger(p, armor, "cooldown")) {
 			Vec3 look = p.getLookAngle().multiply(1, 0, 1).normalize().scale(0.9 * armor.strength());
 			p.setDeltaMovement(p.getDeltaMovement().add(look.x, 0.35, look.z));
-			p.needsSync = true;
+			launch(p);
 			p.level().playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.BREEZE_JUMP, SoundSource.PLAYERS, 0.7f, 1.2f);
 		}
 		st.wasSneaking = sneaking;
@@ -257,6 +257,15 @@ public final class Effects {
 		return amount;
 	}
 
+	/**
+	 * After changing an entity's velocity. Mobs sync on their own; a player's movement is run by their own client, so
+	 * the new velocity has to be sent to them or the push never happens (the sound plays, nothing moves).
+	 */
+	private static void launch(Entity e) {
+		e.needsSync = true;
+		if (e instanceof ServerPlayer sp) sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(sp));
+	}
+
 	private static boolean behind(LivingEntity victim, Entity attacker) {
 		Vec3 toAttacker = attacker.position().subtract(victim.position()).normalize();
 		return victim.getViewVector(1).dot(toAttacker) < -0.3;
@@ -280,7 +289,7 @@ public final class Effects {
 				Vec3 away = attacker.position().subtract(p.position()).multiply(1, 0, 1).normalize()
 					.scale(1.2 * armor.strength() * (attacker instanceof Player ? TrimPerks.config.get("general.pvp_multiplier") : 1));
 				attacker.push(away.x, 0.35, away.z);
-				attacker.needsSync = true;
+				launch(attacker);
 				p.level().playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.TRIDENT_THUNDER, SoundSource.PLAYERS, 0.4f, 1.8f);
 			}
 		}
@@ -298,13 +307,13 @@ public final class Effects {
 				if (p.isInWater() || victim.isInWater()) {
 					Vec3 push = p.getLookAngle().multiply(1, 0, 1).normalize().scale(0.5 * w.power("knockback", victim));
 					victim.push(push.x, 0.1, push.z);
-					victim.needsSync = true;
+					launch(victim);
 				}
 			}
 			case "raiser" -> {
 				if (victim.getBbWidth() < 1 && !(victim instanceof Player)) {
 					victim.push(0, 0.45 * w.strength(), 0);
-					victim.needsSync = true;
+					launch(victim);
 				}
 			}
 			case "flow" -> { if (p.isSprinting()) Trims.state(p).timers.put("flow", Trims.now(p.level()) + w.ticks("duration")); }
