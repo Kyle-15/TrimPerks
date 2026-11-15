@@ -74,6 +74,10 @@ def publish_modrinth(token, version, jar, pack, changelog, dry_run):
                                                          ("pack", pack.name, pack.read_bytes(), "application/zip")])
     created = request(f"{MODRINTH_API}/version", auth, body, ctype)
     print(f"- uploaded {number} (version id {created['id']})")
+    # Modrinth keeps the environment per version (v3 API) and won't list a version without it
+    request(f"{MODRINTH_API.replace('/v2', '/v3')}/version/{created['id']}", auth,
+            json.dumps({"environment": "server_only_client_optional"}).encode(), "application/json", "PATCH")
+    print("- set environment: server-side, optional on the client")
 
 
 def curseforge_ids(token):
