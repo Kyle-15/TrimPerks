@@ -38,7 +38,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -201,7 +200,7 @@ public final class Effects {
 		ItemStack held = p.getMainHandItem();
 		if (tool != null && tool.pattern().equals("ward") && held.isDamageableItem() && held.getDamageValue() >= held.getMaxDamage() - 1) {
 			mine = 0; // "broken": it's saved from breaking, but has to be repaired before it mines again
-			if (now % 40 == 0) p.sendOverlayMessage(Component.literal("This tool needs repairing"));
+			if (now % 40 == 0) Compat.overlay(p, Component.literal("This tool needs repairing"));
 		}
 		mod(p, Attributes.BLOCK_BREAK_SPEED, "mining", mine - 1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 	}
@@ -209,14 +208,14 @@ public final class Effects {
 	private static void showDeath(ServerPlayer p) {
 		GlobalPos death = p.getLastDeathLocation().orElse(null);
 		if (death == null || death.dimension() != p.level().dimension()) {
-			p.sendOverlayMessage(Component.literal("No death point in this dimension"));
+			Compat.overlay(p, Component.literal("No death point in this dimension"));
 			return;
 		}
 		Vec3 to = Vec3.atCenterOf(death.pos()).subtract(p.position());
 		double angle = Math.toDegrees(Math.atan2(-to.x, to.z)) - p.getYRot();
 		String[] arrows = {"↑", "↗", "→", "↘", "↓", "↙", "←", "↖"};
 		int i = (int) Math.floorMod(Math.round(angle / 45), 8);
-		p.sendOverlayMessage(Component.literal("Last death: " + (int) to.horizontalDistance() + " blocks " + arrows[i]));
+		Compat.overlay(p, Component.literal("Last death: " + (int) to.horizontalDistance() + " blocks " + arrows[i]));
 	}
 
 	// ---------------------------------------------------------------- damage
@@ -229,9 +228,10 @@ public final class Effects {
 		Entity attacker = source.getEntity();
 		switch (armor.pattern()) {
 			case "sentry" -> {
-				if (source.getDirectEntity() instanceof AbstractArrow arrow && p.getRandom().nextDouble() < armor.power("chance", attacker)) {
-					boolean keep = arrow.pickup == AbstractArrow.Pickup.ALLOWED;
-					arrow.discard();
+				Boolean pickup = source.getDirectEntity() == null ? null : Compat.arrowPickup(source.getDirectEntity());
+				if (pickup != null && p.getRandom().nextDouble() < armor.power("chance", attacker)) {
+					boolean keep = pickup;
+					source.getDirectEntity().discard();
 					if (keep && !p.getInventory().add(new ItemStack(Items.ARROW))) p.spawnAtLocation((ServerLevel) p.level(), new ItemStack(Items.ARROW));
 					p.level().playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 1f, 1f);
 					return false;
@@ -284,7 +284,7 @@ public final class Effects {
 	 * the new velocity has to be sent to them or the push never happens (the sound plays, nothing moves).
 	 */
 	private static void launch(Entity e) {
-		e.needsSync = true;
+		Compat.markMoved(e);
 		if (e instanceof ServerPlayer sp) sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(sp));
 	}
 
@@ -441,8 +441,8 @@ public final class Effects {
 			return InteractionResult.SUCCESS;
 		}
 		if (t.pattern().equals("raiser") && state.getBlock() instanceof CropBlock crop && !crop.isMaxAge(state)
-				&& crop.isValidBonemealTarget(level, pos, state, net.minecraft.world.level.block.BonemealSource.INTERACTION) && Trims.trigger(p, t, "cooldown")) {
-			crop.performBonemeal(sl, sl.getRandom(), pos, state, net.minecraft.world.level.block.BonemealSource.INTERACTION);
+				&& Compat.canBonemeal(crop, sl, pos, state) && Trims.trigger(p, t, "cooldown")) {
+			Compat.bonemeal(crop, sl, pos, state);
 			sl.levelEvent(1505, pos, 15);
 			return InteractionResult.SUCCESS;
 		}
@@ -453,14 +453,14 @@ public final class Effects {
 		Active t = Trims.get(p, Kind.TOOL, "eye");
 		if (t == null || !p.getMainHandItem().is(ItemTags.PICKAXES)) return;
 		if (!Trims.ready(p, t, "cooldown")) {
-			p.sendOverlayMessage(Component.literal("Ore sense is cooling down"));
+			Compat.overlay(p, Component.literal("Ore sense is cooling down"));
 			return;
 		}
 		if (!Trims.trigger(p, t, "cooldown")) return;
 		int r = (int) Math.round(t.reach("range")), count = 0;
 		for (BlockPos at : BlockPos.betweenClosed(p.blockPosition().offset(-r, -r, -r), p.blockPosition().offset(r, r, r)))
 			if (p.level().getBlockState(at).is(ConventionalBlockTags.ORES)) count++;
-		p.sendOverlayMessage(Component.literal(count + " ores within " + r + " blocks"));
+		Compat.overlay(p, Component.literal(count + " ores within " + r + " blocks"));
 	}
 
 	// ---------------------------------------------------------------- helpers

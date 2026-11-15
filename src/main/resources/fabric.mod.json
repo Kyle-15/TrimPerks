@@ -9,5 +9,5 @@
   "environment": "*",
   "mixins": ["trimperks.mixins.json"],
   "entrypoints": { "main": ["com.trimperks.TrimPerks"] },
-  "depends": { "fabricloader": ">=0.19.5", "minecraft": "~26.3", "java": ">=25", "fabric-api": "*" }
+  "depends": { "fabricloader": ">=0.19.5", "minecraft": "${minecraft}", "java": ">=${java}", "fabric-api": "*" }
 }

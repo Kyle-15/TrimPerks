@@ -52,7 +52,7 @@ public final class Trims {
 	}
 
 	public static String pathOf(Holder<?> holder) {
-		return holder.unwrapKey().map(k -> k.identifier().getPath()).orElse("");
+		return holder.unwrapKey().map(Compat::path).orElse("");
 	}
 
 	public static final TagKey<Item> TRIMMABLE_TOOLS = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(TrimPerks.MOD_ID, "trimmable_tools"));

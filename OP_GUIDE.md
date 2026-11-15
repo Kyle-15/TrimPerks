@@ -1,10 +1,11 @@
 # TrimPerks: op guide
 
-Running a server with TrimPerks (Fabric 26.3). Players don't need the mod installed: everything, including both
+Running a server with TrimPerks (Fabric, Minecraft 1.21.9 to 26.3). Players don't need the mod installed: everything, including both
 windows, runs on the server.
 
 ## Install
-1. Put `trimperks-<version>+26.3.jar` and Fabric API in the server's `mods` folder.
+1. Put the jar for your Minecraft version (`+1.21.10` for 1.21.9-1.21.10, `+1.21.11`, `+26.1` for 26.1.x, `+26.2`, `+26.3`)
+   and Fabric API in the server's `mods` folder.
 2. Start the server once. It writes `config/trimperks.json` with every setting at its default.
 
 ## Tool and weapon trim textures

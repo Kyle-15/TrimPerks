@@ -3,7 +3,7 @@
 Fabric mod: armor and tool trims give gameplay effects. **Pattern = what it does. Material = how.**
 Server-side logic; client needed only to see tool trims (models) and tooltips/HUD.
 
-Target: **Fabric 26.3 only** (the server's version). Used on **both PvP and survival** servers.
+Target: Fabric, Minecraft **1.21.9 to 26.3** (since 0.3.0; one jar per version family, same build setup as TweakSwitch). Used on **both PvP and survival** servers.
 Status: all effects, retrimming, the settle timer, the guide windows and the commands are written (0.1.0). It boots on a
 26.3 dev server with every mixin target loaded cleanly. **Not yet played in a client**, so gameplay still needs a
 real playtest. Op docs: OP_GUIDE.md.

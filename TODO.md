@@ -57,6 +57,10 @@ Found while answering balance questions on 2026-11-14 (after 0.1.4). Do these as
 - [ ] Whether breaking an armor stand counts as a kill.
 - [ ] Cooldown bars, Eye double-tap sneak, Spire's small-fall rule, Bolt felling with a claim mod.
 
+## Versions
+- [ ] Minecraft 1.21 to 1.21.8. Needs cut-backs: no guide windows before 1.21.6 (dialogs), no tool-trim textures before
+      1.21.4 (item model definitions), no jump-key input for Flow before 1.21.2.
+
 ## Smaller
 - [ ] Cooldowns reset on a server restart (kept in memory only). Fine for now; could save them as player data.
 - [x] No GitHub Actions build or Modrinth/CurseForge listing yet (TweakSwitch has both to copy from).

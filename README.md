@@ -1,6 +1,6 @@
 # TrimPerks
 
-A Fabric mod for Minecraft **26.3** that makes armor and tool trims do things.
+A Fabric mod for Minecraft **1.21.9 to 26.3** that makes armor and tool trims do things.
 **The pattern decides what a trim does; the material decides how.** Every material has a downside, so there's no
 single best trim, and everything is tunable in-game.
 
@@ -12,7 +12,16 @@ single best trim, and everything is tunable in-game.
 - **Server-side:** players don't need the mod. `/trimperks guide` opens a window listing every effect with the live numbers.
 
 ## Install
-1. Put the TrimPerks jar and [Fabric API](https://modrinth.com/mod/fabric-api) in your server's `mods` folder.
+1. Put the TrimPerks jar for your Minecraft version and [Fabric API](https://modrinth.com/mod/fabric-api) in your server's `mods` folder:
+
+   | Minecraft | Jar |
+   |---|---|
+   | 1.21.9, 1.21.10 | `trimperks-<version>+1.21.10.jar` |
+   | 1.21.11 | `trimperks-<version>+1.21.11.jar` |
+   | 26.1, 26.1.1, 26.1.2 | `trimperks-<version>+26.1.jar` |
+   | 26.2 | `trimperks-<version>+26.2.jar` |
+   | 26.3 | `trimperks-<version>+26.3.jar` |
+
 2. That's it: players without the mod are offered the tool-trim resource pack automatically when they join.
 
 ## Docs
@@ -21,7 +30,8 @@ single best trim, and everything is tunable in-game.
 
 ## Building
 ```
-./gradlew build          # jar in build/libs
+./gradlew build -Pmc=26.3   # one version's jar in build/libs (default 26.3)
+./scripts/build-all.sh      # every version + the resource pack in build/release
 ./gradlew checkAssets    # checks the tool trim item models with the game's own parser
 python3 tools/gen_tool_trims.py <path to the 26.3 minecraft-client.jar>   # regenerate overlays + resource pack
 ```

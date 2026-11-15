@@ -1,4 +1,4 @@
-# Uploads a published GitHub release (mod jar + resource pack) to Modrinth and CurseForge.
+# Uploads a published GitHub release (a jar per Minecraft version + the resource pack) to Modrinth and CurseForge.
 # Needs secrets MODRINTH_TOKEN and CURSEFORGE_TOKEN, and the repository variable CURSEFORGE_PROJECT (project id).
 name: Publish
 

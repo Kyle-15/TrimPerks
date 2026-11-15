@@ -28,4 +28,4 @@ resource pack, so there's nothing to set up. Players with the mod installed see 
 - `/trimperks config set <key> <value>`, `disable <name>`, `enable <name>`, `reload`; `/reload` also re-reads the config.
 - Full guide: [OP_GUIDE.md](https://github.com/Kyle-15/TrimPerks/blob/main/OP_GUIDE.md)
 
-Requires **Fabric API**. Minecraft **26.3**.
+Requires **Fabric API**. Minecraft **1.21.9 to 26.3** (one jar per version; pick the one for your server).

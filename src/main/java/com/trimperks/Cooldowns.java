@@ -67,7 +67,7 @@ public final class Cooldowns {
 			default -> BossEvent.BossBarColor.YELLOW;
 		};
 		long now = Trims.now(p.level());
-		ServerBossEvent event = new ServerBossEvent(UUID.randomUUID(), name(label, ticks), color, BossEvent.BossBarOverlay.PROGRESS);
+		ServerBossEvent event = Compat.bossEvent(name(label, ticks), color, BossEvent.BossBarOverlay.PROGRESS);
 		event.setProgress(0);
 		event.addPlayer(p);
 		bars.put(kind, new Bar(event, label, now, now + ticks));

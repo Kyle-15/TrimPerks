@@ -1,7 +1,7 @@
 {
 	"required": true,
 	"package": "com.trimperks.mixin",
-	"compatibilityLevel": "JAVA_25",
+	"compatibilityLevel": "JAVA_${java}",
 	"mixins": ["SmithingMenuMixin", "ItemCombinerMenuMixin", "GrindstoneMenuMixin", "GrindstoneInputSlotMixin", "GrindstoneResultSlotMixin",
 		"LivingEntityMixin", "EndermanMixin", "PiglinAiMixin", "FishingHookMixin", "ItemStackMixin", "ServerLevelMixin", "BlockMixin"],
 	"injectors": { "defaultRequire": 1 }

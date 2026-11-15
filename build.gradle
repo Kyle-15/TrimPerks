@@ -1,20 +1,69 @@
 plugins {
-	// 26.x ships unobfuscated, so the plain (non-remap) Loom is used and no mappings are needed
-	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	// 26.x ships unobfuscated; 1.21.x is obfuscated and needs the remapping flavor of Loom. Only one is applied, below.
+	id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
+	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
 }
-version = "${project.mod_version}+${project.minecraft_version}"
+
+// Which Minecraft version to build for: ./gradlew build -Pmc=1.21.10 (default: the newest). Each version's dependency
+// versions live in versions/<mc>.properties; calls whose names differ between versions are in src/compat/<compat>.
+// Same setup as TweakSwitch.
+def mc = providers.gradleProperty("mc").getOrElse("26.3")
+def versionFile = file("versions/${mc}.properties")
+if (!versionFile.exists()) {
+	throw new GradleException("No versions/${mc}.properties; supported: " + file("versions").list().collect { it - ".properties" }.sort().join(", "))
+}
+def versionProperties = new Properties()
+versionFile.withInputStream { versionProperties.load(it) }
+versionProperties.each { key, value -> ext.set(key, value) }
+version = "${project.mod_version}+${mc}"
+def obfuscated = mc.startsWith("1.")
+apply plugin: obfuscated ? 'net.fabricmc.fabric-loom-remap' : 'net.fabricmc.fabric-loom'
+def mod = { String configuration -> obfuscated ? "mod" + configuration.capitalize() : configuration }
+
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	if (obfuscated) {
+		mappings loom.officialMojangMappings()
+	}
+	add(mod("implementation"), "net.fabricmc:fabric-loader:${project.loader_version}")
+	add(mod("implementation"), "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}")
 	compileOnly "org.jspecify:jspecify:1.0.0"
 }
+
+if (project.findProperty("identifier_name") == "old") {
+	// Before 1.21.11, Mojang's names call Identifier "ResourceLocation" (the same class in the game). Compile a copy of the
+	// sources with the old name, so the shared code doesn't need two spellings.
+	def oldNames = layout.buildDirectory.dir("generated/old-names")
+	def oldNameSources = tasks.register("oldNameSources", Sync) {
+		from("src/main/java")
+		from("src/compat/${project.compat}/java")
+		into(oldNames)
+		filter { String line -> line.replaceAll(/\bIdentifier\b/, "ResourceLocation") }
+	}
+	sourceSets.main.java.srcDirs = [oldNames]
+	tasks.named("compileJava") { dependsOn(oldNameSources) }
+} else {
+	sourceSets.main.java.srcDir("src/compat/${project.compat}/java")
+}
+
 processResources {
-	inputs.property "version", project.version
-	filesMatching("fabric.mod.json") { expand "version": project.version }
+	def version = project.version
+	def minecraftRange = project.minecraft_range
+	def javaVersion = project.java_version
+	inputs.property "version", version
+	inputs.property "minecraftRange", minecraftRange
+	inputs.property "javaVersion", javaVersion
+	filesMatching("fabric.mod.json") { expand "version": version, "minecraft": minecraftRange, "java": javaVersion }
+	// Mixin refuses a level above the running Java, and 1.21 runs on Java 21
+	filesMatching("trimperks.mixins.json") { expand "java": javaVersion }
 }
 def javaVersion = Integer.parseInt(project.java_version)
-tasks.withType(JavaCompile).configureEach { it.options.release = javaVersion }
+def gameJava = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(javaVersion) }
+tasks.withType(JavaExec).configureEach { javaLauncher = gameJava }
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = javaVersion
+	it.options.compilerArgs += ["-Xmaxerrs", "1000"]
+}
 java {
 	sourceCompatibility = JavaVersion.toVersion(javaVersion)
 	targetCompatibility = JavaVersion.toVersion(javaVersion)

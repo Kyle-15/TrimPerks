@@ -1,10 +1,7 @@
 {
   "pack": {
-    "description": "TrimPerks: trims on tools and weapons",
-    "min_format": [
-      97,
-      0
-    ],
+    "description": "TrimPerks: trims on tools and weapons (Minecraft 1.21.9 - 26.3)",
+    "min_format": 69,
     "max_format": [
       97,
       1

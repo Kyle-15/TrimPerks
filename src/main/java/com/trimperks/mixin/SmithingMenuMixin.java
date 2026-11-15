@@ -38,7 +38,7 @@ public abstract class SmithingMenuMixin extends ItemCombinerMenu {
 		ItemStack template = inputSlots.getItem(0), base = inputSlots.getItem(1), addition = inputSlots.getItem(2);
 		if (!template.isEmpty() || base.isEmpty() || addition.isEmpty()) return;
 		ArmorTrim old = base.get(DataComponents.TRIM);
-		Holder<TrimMaterial> material = addition.get(DataComponents.PROVIDES_TRIM_MATERIAL);
+		Holder<TrimMaterial> material = com.trimperks.Compat.trimMaterial(addition, player.registryAccess());
 		if (old == null || material == null || material.equals(old.material())) return;
 		ItemStack result = base.copyWithCount(1);
 		result.set(DataComponents.TRIM, new ArmorTrim(material, old.pattern()));
@@ -53,6 +53,6 @@ public abstract class SmithingMenuMixin extends ItemCombinerMenu {
 		int levels = (int) TrimPerks.config.get("general.material_swap_levels");
 		if (inputSlots.getItem(0).isEmpty() && !player.getAbilities().instabuild) player.giveExperienceLevels(-levels);
 		Trims.startSettling(stack, player.level());
-		player.sendOverlayMessage(Component.literal("Trim settling: works in " + Trims.settleLeft(stack, player.level()) + "s"));
+		com.trimperks.Compat.overlay(player, Component.literal("Trim settling: works in " + Trims.settleLeft(stack, player.level()) + "s"));
 	}
 }
