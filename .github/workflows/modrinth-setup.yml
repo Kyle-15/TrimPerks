@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: "create = new draft page, update = push listing/ text, submit = send for review"
+        description: "create = new draft page, update = push listing/ text, environment = set server-side/client-optional on every version, submit = send for review"
         type: choice
-        options: ["create", "update", "submit"]
+        options: ["create", "update", "environment", "submit"]
         default: "create"
 
 permissions:
